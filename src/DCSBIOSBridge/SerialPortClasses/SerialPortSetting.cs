@@ -31,7 +31,8 @@ namespace DCSBIOSBridge.SerialPortClasses
                 WriteTimeout = int.Parse(list[6]),
                 ReadTimeout = int.Parse(list[7]),
                 LineSignalDtr = bool.Parse(list[8]),
-                LineSignalRts = bool.Parse(list[9])
+                LineSignalRts = bool.Parse(list[9]),
+                CustomName = list.Length > 10 ? list[10] : string.Empty
             };
             result.LineSignalRts = bool.Parse(list[9]);
             return result;
@@ -49,7 +50,8 @@ namespace DCSBIOSBridge.SerialPortClasses
                           WriteTimeout + "|" +
                           ReadTimeout + "|" +
                           LineSignalDtr + "|" +
-                          LineSignalRts);
+                          LineSignalRts + "|" +
+                          CustomName);
             return result.ToString();
         }
 
@@ -63,5 +65,6 @@ namespace DCSBIOSBridge.SerialPortClasses
         public Handshake Handshake { get; set; }
         public int ReadTimeout { get; set; }
         public int WriteTimeout { get; set; }
+        public string CustomName { get; set; } = string.Empty;
     }
 }

@@ -58,6 +58,12 @@ namespace DCSBIOSBridge.Windows
             TextBoxDCSBIOSFromPort.TextChanged += DcsBiosDirty;
             TextBoxDCSBIOSToPort.TextChanged += DcsBiosDirty;
             TextBoxDCSBIOSCommandDelay.TextChanged += DcsBiosDirty;
+            CheckBoxOpenAllPortsOnStartup.Checked += BridgeSettingsDirty;
+            CheckBoxOpenAllPortsOnStartup.Unchecked += BridgeSettingsDirty;
+            TextBoxWatchDogNoReadTimeoutSeconds.TextChanged += DcsBiosDirty;
+            TextBoxWatchDogRecentWriteWindowSeconds.TextChanged += DcsBiosDirty;
+            TextBoxWatchDogCooldownSeconds.TextChanged += DcsBiosDirty;
+            TextBoxWatchDogReopenDelayMilliseconds.TextChanged += DcsBiosDirty;
         }
 
         private void LoadSettings()
@@ -67,6 +73,11 @@ namespace DCSBIOSBridge.Windows
             TextBoxDCSBIOSFromPort.Text = Settings.Default.DCSBiosPortFrom;
             TextBoxDCSBIOSToPort.Text = Settings.Default.DCSBiosPortTo;
             TextBoxDCSBIOSCommandDelay.Text = Settings.Default.DelayBetweenCommands.ToString();
+            CheckBoxOpenAllPortsOnStartup.IsChecked = Settings.Default.OpenAllPortsOnStartup;
+            TextBoxWatchDogNoReadTimeoutSeconds.Text = Settings.Default.WatchDogNoReadTimeoutSeconds.ToString();
+            TextBoxWatchDogRecentWriteWindowSeconds.Text = Settings.Default.WatchDogRecentWriteWindowSeconds.ToString();
+            TextBoxWatchDogCooldownSeconds.Text = Settings.Default.WatchDogCooldownSeconds.ToString();
+            TextBoxWatchDogReopenDelayMilliseconds.Text = Settings.Default.WatchDogReopenDelayMilliseconds.ToString();
         }
 
         private void ButtonCancel_OnClick(object sender, RoutedEventArgs e)
@@ -88,6 +99,11 @@ namespace DCSBIOSBridge.Windows
                     Settings.Default.DCSBiosIPTo = IpAddressToDCSBIOS;
                     Settings.Default.DCSBiosPortTo = PortToDCSBIOS;
                     Settings.Default.DelayBetweenCommands = Convert.ToInt32(TextBoxDCSBIOSCommandDelay.Text);
+                    Settings.Default.OpenAllPortsOnStartup = CheckBoxOpenAllPortsOnStartup.IsChecked == true;
+                    Settings.Default.WatchDogNoReadTimeoutSeconds = Convert.ToInt32(TextBoxWatchDogNoReadTimeoutSeconds.Text);
+                    Settings.Default.WatchDogRecentWriteWindowSeconds = Convert.ToInt32(TextBoxWatchDogRecentWriteWindowSeconds.Text);
+                    Settings.Default.WatchDogCooldownSeconds = Convert.ToInt32(TextBoxWatchDogCooldownSeconds.Text);
+                    Settings.Default.WatchDogReopenDelayMilliseconds = Convert.ToInt32(TextBoxWatchDogReopenDelayMilliseconds.Text);
                     Settings.Default.Save();
 
                     DCSBIOS.GetInstance().DelayBetweenCommands = Convert.ToInt32(TextBoxDCSBIOSCommandDelay.Text);
@@ -176,14 +192,41 @@ namespace DCSBIOSBridge.Windows
                 {
                     throw new Exception($"DCS-BIOS Delay between DCS-BIOS commands : {ex.Message}");
                 }
+
+                ValidateGreaterThanZero(TextBoxWatchDogNoReadTimeoutSeconds.Text, "Watch Dog no-read timeout seconds");
+                ValidateGreaterThanZero(TextBoxWatchDogRecentWriteWindowSeconds.Text, "Watch Dog recent-write window seconds");
+                ValidateGreaterThanZero(TextBoxWatchDogCooldownSeconds.Text, "Watch Dog cooldown seconds");
+                ValidateGreaterThanZero(TextBoxWatchDogReopenDelayMilliseconds.Text, "Watch Dog reopen delay milliseconds");
             }
             catch (Exception ex)
             {
                 throw new Exception($"DCS-BIOS Error checking values : {Environment.NewLine}{ex.Message}");
             }
         }
+
+        private static void ValidateGreaterThanZero(string value, string fieldName)
+        {
+            try
+            {
+                var parsed = Convert.ToInt32(value);
+                if (parsed <= 0)
+                {
+                    throw new Exception($"{fieldName} must be greater than zero.");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"{fieldName} : {ex.Message}");
+            }
+        }
         
         private void DcsBiosDirty(object sender, TextChangedEventArgs e)
+        {
+            DCSBIOSChanged = true;
+            ButtonOk.IsEnabled = true;
+        }
+
+        private void BridgeSettingsDirty(object sender, RoutedEventArgs e)
         {
             DCSBIOSChanged = true;
             ButtonOk.IsEnabled = true;

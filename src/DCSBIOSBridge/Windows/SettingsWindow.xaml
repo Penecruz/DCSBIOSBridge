@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Settings" Height="450" Width="300"
+        Title="Settings" Height="760" Width="300"
         Loaded="SettingsWindow_OnLoaded"
         WindowStartupLocation="CenterScreen" 
         KeyDown="SettingsWindow_OnKeyDown" Icon="/images/app_icon.ico">
@@ -33,6 +33,19 @@
 
             <Label Content="Delay between DCS-BIOS commands (>0)" Margin="0,0,0,0" VerticalAlignment="Top"/>
             <TextBox Name="TextBoxDCSBIOSCommandDelay" Height="23" Margin="0,0,0,0" TextWrapping="Wrap" Text="5"/>
+
+            <Label FontWeight="Bold" Margin="0,10,0,0" ToolTip="Application-level behavior for this bridge instance.">Bridge Settings</Label>
+            <CheckBox Name="CheckBoxOpenAllPortsOnStartup" Content="Open all ports on startup" Margin="0,0,0,0" ToolTip="When enabled, the app opens all listed ports automatically after startup."/>
+
+            <Label FontWeight="Bold" Margin="0,10,0,0" ToolTip="Configure automatic serial-port recovery when read activity appears stalled.">Watch Dog Settings</Label>
+            <Label Content="No-read timeout seconds (>0)" Margin="0,0,0,0" VerticalAlignment="Top" ToolTip="If no serial reads occur for this many seconds while writes are still active, the watchdog will bark."/>
+            <TextBox Name="TextBoxWatchDogNoReadTimeoutSeconds" Height="23" Margin="0,0,0,0" TextWrapping="Wrap" Text="30" ToolTip="Stall detection threshold in seconds."/>
+            <Label Content="Recent-write window seconds (>0)" Margin="0,0,0,0" VerticalAlignment="Top" ToolTip="Writes must have occurred within this window for stall detection to be considered active."/>
+            <TextBox Name="TextBoxWatchDogRecentWriteWindowSeconds" Height="23" Margin="0,0,0,0" TextWrapping="Wrap" Text="10" ToolTip="How recent outgoing writes must be, in seconds."/>
+            <Label Content="Cooldown seconds (>0)" Margin="0,0,0,0" VerticalAlignment="Top" ToolTip="Minimum time between watchdog barks to avoid repeated reopen loops."/>
+            <TextBox Name="TextBoxWatchDogCooldownSeconds" Height="23" Margin="0,0,0,0" TextWrapping="Wrap" Text="15" ToolTip="Watchdog bark cooldown in seconds."/>
+            <Label Content="Reopen delay ms (>0)" Margin="0,0,0,0" VerticalAlignment="Top" ToolTip="Pause between closing and reopening the serial port during watchdog recovery."/>
+            <TextBox Name="TextBoxWatchDogReopenDelayMilliseconds" Height="23" Margin="0,0,0,0" TextWrapping="Wrap" Text="250" ToolTip="Close-to-open delay in milliseconds during recovery."/>
 
             <TextBlock FontSize="25" HorizontalAlignment="Center" Margin="5,15,5,0" >Problems?</TextBlock>
             <TextBlock TextWrapping="Wrap" Margin="5,5,5,0" FontSize="14" Background="AliceBlue" HorizontalAlignment="Center">

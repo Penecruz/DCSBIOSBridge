@@ -90,6 +90,8 @@ namespace DCSBIOSBridge.misc
                         break;
                     case SerialPortStatus.Critical:
                         break;
+                    case SerialPortStatus.WatchDogBark:
+                        break;
                     case SerialPortStatus.IOError:
                         break;
                     case SerialPortStatus.TimeOutError:

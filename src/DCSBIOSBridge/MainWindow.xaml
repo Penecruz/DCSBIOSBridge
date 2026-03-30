@@ -58,6 +58,7 @@
                 <MenuItem Name ="MenuItemShow" Header="Show serial port">
                     <MenuItem Name="MenuItemName" Header="Name" Tag="0" Click="MenuItemShowInfo_OnClick"></MenuItem>
                     <MenuItem Name="MenuItemVIDPID" Header="VID__PID" Tag="1" Click="MenuItemShowInfo_OnClick"></MenuItem>
+                    <MenuItem Name="MenuItemCustomDetails" Header="Custom + VID/PID + COM" Tag="2" Click="MenuItemShowInfo_OnClick"></MenuItem>
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="Help" >

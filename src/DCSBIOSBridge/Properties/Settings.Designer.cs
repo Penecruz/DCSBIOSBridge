@@ -34,6 +34,18 @@ namespace DCSBIOSBridge.Properties {
                 this["ShowNewSerialPortsAutomatically"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool OpenAllPortsOnStartup {
+            get {
+                return ((bool)(this["OpenAllPortsOnStartup"]));
+            }
+            set {
+                this["OpenAllPortsOnStartup"] = value;
+            }
+        }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -176,6 +188,54 @@ namespace DCSBIOSBridge.Properties {
             }
             set {
                 this["DelayBetweenCommands"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("30")]
+        public int WatchDogNoReadTimeoutSeconds {
+            get {
+                return ((int)(this["WatchDogNoReadTimeoutSeconds"]));
+            }
+            set {
+                this["WatchDogNoReadTimeoutSeconds"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        public int WatchDogRecentWriteWindowSeconds {
+            get {
+                return ((int)(this["WatchDogRecentWriteWindowSeconds"]));
+            }
+            set {
+                this["WatchDogRecentWriteWindowSeconds"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("15")]
+        public int WatchDogCooldownSeconds {
+            get {
+                return ((int)(this["WatchDogCooldownSeconds"]));
+            }
+            set {
+                this["WatchDogCooldownSeconds"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("250")]
+        public int WatchDogReopenDelayMilliseconds {
+            get {
+                return ((int)(this["WatchDogReopenDelayMilliseconds"]));
+            }
+            set {
+                this["WatchDogReopenDelayMilliseconds"] = value;
             }
         }
     }

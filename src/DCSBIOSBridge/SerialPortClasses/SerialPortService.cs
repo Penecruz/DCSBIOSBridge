@@ -156,6 +156,8 @@ namespace DCSBIOSBridge.SerialPortClasses
                         _serialPorts.RemoveWhere(o => o == e.SerialPortName);
                         break;
                     }
+                case SerialPortStatus.WatchDogBark:
+                    break;
                 case SerialPortStatus.TimeOutError:
                     break;
                 case SerialPortStatus.BytesWritten:

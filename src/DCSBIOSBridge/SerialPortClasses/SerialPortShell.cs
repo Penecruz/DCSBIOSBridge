@@ -6,7 +6,9 @@ using DCS_BIOS.EventArgs;
 using DCS_BIOS.Interfaces;
 using DCSBIOSBridge.Events;
 using DCSBIOSBridge.Events.Args;
+using DCSBIOSBridge.Interfaces;
 using DCSBIOSBridge.misc;
+using DCSBIOSBridge.Properties;
 using Microsoft.Win32;
 using NLog;
 
@@ -26,6 +28,7 @@ namespace DCSBIOSBridge.SerialPortClasses
         TimeOutError,
         Error,
         Critical,
+        WatchDogBark,
         BytesWritten,
         BytesRead,
         Settings
@@ -34,10 +37,11 @@ namespace DCSBIOSBridge.SerialPortClasses
     public enum HardwareInfoToShow
     {
         Name,
-        VIDPID
+        VIDPID,
+        CustomNameVidPidAndComPort
     }
 
-    public class SerialPortShell : IDcsBiosBulkDataListener, IDisposable
+    public class SerialPortShell : IDcsBiosBulkDataListener, ISerialDataListener, IDisposable
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
@@ -49,6 +53,11 @@ namespace DCSBIOSBridge.SerialPortClasses
         private AutoResetEvent _serialDataWaitingForWriteResetEvent = new(false);
         private bool _shutdown;
         private bool _portShouldBeOpen;
+        private DateTime _lastSerialReadActivityUtc = DateTime.MinValue;
+        private DateTime _lastSerialWriteActivityUtc = DateTime.MinValue;
+        private DateTime _lastWatchDogBarkUtc = DateTime.MinValue;
+        private bool _readChannelObserved;
+        private int _watchDogBarkCount;
 
         public SerialPortSetting SerialPortSetting { get; set; }
 
@@ -62,6 +71,7 @@ namespace DCSBIOSBridge.SerialPortClasses
             thread.Start();
             
             BIOSEventHandler.AttachBulkDataListener(this);
+            DBEventManager.AttachDataReceivedListener(this);
         }
 
         #region IDisposable Support
@@ -79,6 +89,7 @@ namespace DCSBIOSBridge.SerialPortClasses
                 Debug.WriteLine($"Disposing shell for {SerialPortSetting.ComPort}");
                 
                 BIOSEventHandler.DetachBulkDataListener(this);
+                DBEventManager.DetachDataReceivedListener(this);
                 //  dispose managed state (managed objects).
                 _serialDataWaitingForWriteResetEvent?.Set();
                 _serialDataWaitingForWriteResetEvent?.Close();
@@ -238,6 +249,7 @@ namespace DCSBIOSBridge.SerialPortClasses
                     if(!success) continue;
                     
                     _safeSerialPort.BaseStream.Write(data, 0, data.Length);
+                    _lastSerialWriteActivityUtc = DateTime.UtcNow;
                     DBEventManager.BroadCastSerialData(ComPort, data.Length, StreamInterface.SerialPortWritten);
                 }
                 catch (OperationCanceledException e)
@@ -453,6 +465,74 @@ namespace DCSBIOSBridge.SerialPortClasses
             return existingPorts.Any(portName.Equals);
         }
 
+        public void OnDataReceived(SerialDataEventArgs e)
+        {
+            if (e.ComPort != ComPort)
+            {
+                return;
+            }
+
+            if (e.StreamInterface == StreamInterface.SerialPortRead)
+            {
+                _lastSerialReadActivityUtc = DateTime.UtcNow;
+                _readChannelObserved = true;
+                return;
+            }
+
+            if (e.StreamInterface == StreamInterface.SerialPortWritten)
+            {
+                _lastSerialWriteActivityUtc = DateTime.UtcNow;
+            }
+        }
+
+        private bool ShouldWatchDogBark(DateTime utcNow)
+        {
+            var watchDogNoReadTimeout = TimeSpan.FromSeconds(Math.Max(1, Settings.Default.WatchDogNoReadTimeoutSeconds));
+            var watchDogRecentWriteWindow = TimeSpan.FromSeconds(Math.Max(1, Settings.Default.WatchDogRecentWriteWindowSeconds));
+            var watchDogCooldown = TimeSpan.FromSeconds(Math.Max(1, Settings.Default.WatchDogCooldownSeconds));
+
+            if (_safeSerialPort == null || !_safeSerialPort.IsOpen)
+            {
+                return false;
+            }
+
+            if (!_readChannelObserved)
+            {
+                return false;
+            }
+
+            if (_lastSerialWriteActivityUtc == DateTime.MinValue || _lastSerialReadActivityUtc == DateTime.MinValue)
+            {
+                return false;
+            }
+
+            if (utcNow - _lastWatchDogBarkUtc < watchDogCooldown)
+            {
+                return false;
+            }
+
+            if (utcNow - _lastSerialWriteActivityUtc > watchDogRecentWriteWindow)
+            {
+                return false;
+            }
+
+            return utcNow - _lastSerialReadActivityUtc > watchDogNoReadTimeout;
+        }
+
+        private void BarkWatchDog()
+        {
+            _lastWatchDogBarkUtc = DateTime.UtcNow;
+            _watchDogBarkCount++;
+
+            Logger.Warn($"Watchdog bark on {SerialPortSetting.ComPort}. Reopening serial port. BarkCount={_watchDogBarkCount}");
+            DBEventManager.BroadCastPortStatus(SerialPortSetting.ComPort, SerialPortStatus.WatchDogBark);
+
+            Close();
+            var watchDogReopenDelayMs = Math.Max(1, Settings.Default.WatchDogReopenDelayMilliseconds);
+            Thread.Sleep(watchDogReopenDelayMs);
+            Open();
+        }
+
         private void CheckPortOpen()
         {
             try
@@ -466,6 +546,11 @@ namespace DCSBIOSBridge.SerialPortClasses
                             Logger.Error("Background Thread (CheckPortOpen) detected port is not open.");
                             DBEventManager.BroadCastPortStatus(SerialPortSetting.ComPort, SerialPortStatus.Critical);
                             break;
+                        }
+
+                        if (ShouldWatchDogBark(DateTime.UtcNow))
+                        {
+                            BarkWatchDog();
                         }
                     }
 

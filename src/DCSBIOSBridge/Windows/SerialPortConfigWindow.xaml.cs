@@ -34,6 +34,7 @@ namespace DCSBIOSBridge.Windows
         private void ShowSettings()
         {
             LabelSerialPortName.Content = SerialPortSetting.ComPort;
+            TextBoxCustomName.Text = SerialPortSetting.CustomName;
             ComboBoxBaud.SelectedValue = SerialPortSetting.BaudRate;
             ComboBoxParity.SelectedValue = SerialPortSetting.Parity;
             ComboBoxStopBits.SelectedValue = SerialPortSetting.Stopbits;
@@ -51,6 +52,7 @@ namespace DCSBIOSBridge.Windows
             try
             {
                 SerialPortSetting.BaudRate = int.Parse(ComboBoxBaud.SelectedValue.ToString() ?? "0");
+                SerialPortSetting.CustomName = TextBoxCustomName.Text?.Trim() ?? string.Empty;
                 SerialPortSetting.Parity = (Parity)Enum.Parse(typeof(Parity), ComboBoxParity.SelectedValue.ToString() ?? "None");
                 SerialPortSetting.Stopbits = (StopBits)Enum.Parse(typeof(StopBits), ComboBoxStopBits.SelectedValue.ToString() ?? "One");
                 SerialPortSetting.Databits = int.Parse(ComboBoxDataBits.SelectedValue.ToString() ?? "8");
@@ -88,6 +90,7 @@ namespace DCSBIOSBridge.Windows
             {
                 var serialSetting  = new SerialPortSetting();
                 serialSetting.ComPort = SerialPortSetting.ComPort;
+                serialSetting.CustomName = SerialPortSetting.CustomName;
                 SerialPortSetting = serialSetting;
                 ShowSettings();
             }
