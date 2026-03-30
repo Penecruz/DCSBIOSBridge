@@ -4,9 +4,9 @@
 [![GitHub release](https://img.shields.io/github/release/DCS-Skunkworks/DCSBIOSBridge.svg)](https://github.com/DCS-Skunkworks/DCSBIOSBridge/releases)
 [![Discord](https://img.shields.io/discord/533342958712258572)](https://discord.gg/5svGwKX)
 
-I have forked this repository for my own cockpit building puposes, mainly to update some featues and add some resiience for my Simpit connections. Feel free to use it at your own risk, however no support willbe provided. I'm happy to accept any issues but offer no guarentee ofa fix.
+I have forked this repository for my own cockpit building puposes, mainly to update some featues and add some resiience for my Simpit connections. Feel free to use it at your own risk, however no support willbe provided. I'm happy to accept any issues but offer no guarentee of a fix.
 
- DCS-Bridge handles communication between DCS-BIOS and serial ports
+ DCS-BIOS Bridge handles communication between DCS-BIOS and serial ports
 
 This Version incudes custom names for Comm ports to refect the attached DCS-BIOS Device, a Watch Dog counter that monitors the number of times it barks to wake a non responsive device.
  
