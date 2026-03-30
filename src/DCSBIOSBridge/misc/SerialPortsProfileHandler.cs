@@ -122,11 +122,12 @@ namespace DCSBIOSBridge.misc
                 case SerialPortUserControlStatus.Created:
                     break;
                 case SerialPortUserControlStatus.Hidden:
-                case SerialPortUserControlStatus.Closed:
                     {
                         RemoveSerialPort(args.ComPort);
                         break;
                     }
+                case SerialPortUserControlStatus.Closed:
+                    break;
                 case SerialPortUserControlStatus.Check:
                     break;
                 case SerialPortUserControlStatus.DisposeDisabledPorts:

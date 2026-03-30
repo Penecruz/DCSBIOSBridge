@@ -121,7 +121,7 @@ namespace DCSBIOSBridge.SerialPortClasses
         }
         #endregion
 
-        public void Open()
+        public void Open(bool showErrorPopup = true)
         {
             if (_safeSerialPort != null && _safeSerialPort.IsOpen) return;
 
@@ -146,7 +146,10 @@ namespace DCSBIOSBridge.SerialPortClasses
             }
             catch (IOException e)
             {
-                Common.ShowErrorMessageBox(e, $"Failed to open port {SerialPortSetting.ComPort}.");
+                if (showErrorPopup)
+                {
+                    Common.ShowErrorMessageBox(e, $"Failed to open port {SerialPortSetting.ComPort}.");
+                }
                 Logger.Error(e);
             }
 
@@ -487,8 +490,10 @@ namespace DCSBIOSBridge.SerialPortClasses
 
         private bool ShouldWatchDogBark(DateTime utcNow)
         {
-            var watchDogNoReadTimeout = TimeSpan.FromSeconds(Math.Max(1, Settings.Default.WatchDogNoReadTimeoutSeconds));
-            var watchDogRecentWriteWindow = TimeSpan.FromSeconds(Math.Max(1, Settings.Default.WatchDogRecentWriteWindowSeconds));
+            var watchDogNoReadTimeoutSeconds = Settings.Default.WatchDogNoReadTimeoutSeconds;
+            var watchDogRecentWriteWindowSeconds = Settings.Default.WatchDogRecentWriteWindowSeconds;
+            var watchDogNoReadTimeout = TimeSpan.FromSeconds(Math.Max(1, watchDogNoReadTimeoutSeconds));
+            var watchDogRecentWriteWindow = TimeSpan.FromSeconds(Math.Max(1, watchDogRecentWriteWindowSeconds));
             var watchDogCooldown = TimeSpan.FromSeconds(Math.Max(1, Settings.Default.WatchDogCooldownSeconds));
 
             if (_safeSerialPort == null || !_safeSerialPort.IsOpen)
@@ -511,7 +516,12 @@ namespace DCSBIOSBridge.SerialPortClasses
                 return false;
             }
 
-            if (utcNow - _lastSerialWriteActivityUtc > watchDogRecentWriteWindow)
+            if (watchDogRecentWriteWindowSeconds > 0 && utcNow - _lastSerialWriteActivityUtc > watchDogRecentWriteWindow)
+            {
+                return false;
+            }
+
+            if (watchDogNoReadTimeoutSeconds <= 0)
             {
                 return false;
             }
@@ -521,16 +531,28 @@ namespace DCSBIOSBridge.SerialPortClasses
 
         private void BarkWatchDog()
         {
-            _lastWatchDogBarkUtc = DateTime.UtcNow;
+            var utcNow = DateTime.UtcNow;
+            var watchDogNoReadTimeoutSeconds = Settings.Default.WatchDogNoReadTimeoutSeconds;
+            var watchDogRecentWriteWindowSeconds = Settings.Default.WatchDogRecentWriteWindowSeconds;
+            var watchDogCooldownSeconds = Math.Max(1, Settings.Default.WatchDogCooldownSeconds);
+            var watchDogReopenDelayMs = Math.Max(1, Settings.Default.WatchDogReopenDelayMilliseconds);
+
+            var secondsSinceLastRead = _lastSerialReadActivityUtc == DateTime.MinValue
+                ? -1
+                : (utcNow - _lastSerialReadActivityUtc).TotalSeconds;
+            var secondsSinceLastWrite = _lastSerialWriteActivityUtc == DateTime.MinValue
+                ? -1
+                : (utcNow - _lastSerialWriteActivityUtc).TotalSeconds;
+
+            _lastWatchDogBarkUtc = utcNow;
             _watchDogBarkCount++;
 
-            Logger.Warn($"Watchdog bark on {SerialPortSetting.ComPort}. Reopening serial port. BarkCount={_watchDogBarkCount}");
+            Logger.Warn($"Watchdog bark on {SerialPortSetting.ComPort}. Reopening serial port. BarkCount={_watchDogBarkCount}, SecondsSinceLastRead={secondsSinceLastRead:F1}, SecondsSinceLastWrite={secondsSinceLastWrite:F1}, NoReadTimeoutSeconds={watchDogNoReadTimeoutSeconds}, RecentWriteWindowSeconds={watchDogRecentWriteWindowSeconds}, CooldownSeconds={watchDogCooldownSeconds}, ReopenDelayMilliseconds={watchDogReopenDelayMs}, ReadTimerDisabled={watchDogNoReadTimeoutSeconds <= 0}, WriteTimerDisabled={watchDogRecentWriteWindowSeconds <= 0}");
             DBEventManager.BroadCastPortStatus(SerialPortSetting.ComPort, SerialPortStatus.WatchDogBark);
 
             Close();
-            var watchDogReopenDelayMs = Math.Max(1, Settings.Default.WatchDogReopenDelayMilliseconds);
             Thread.Sleep(watchDogReopenDelayMs);
-            Open();
+            Open(false);
         }
 
         private void CheckPortOpen()

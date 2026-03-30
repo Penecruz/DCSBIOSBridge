@@ -208,7 +208,7 @@ namespace DCSBIOSBridge.UserControls
                         {
                             if (IsEnabled) return;
 
-                            BroadCastClosedAndDispose(SerialPortUserControlStatus.Closed);
+                            BroadCastClosedAndDispose(SerialPortUserControlStatus.Hidden);
                             break;
                         }
                     case SerialPortUserControlStatus.DoDispose:

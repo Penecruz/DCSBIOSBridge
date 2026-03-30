@@ -193,14 +193,30 @@ namespace DCSBIOSBridge.Windows
                     throw new Exception($"DCS-BIOS Delay between DCS-BIOS commands : {ex.Message}");
                 }
 
-                ValidateGreaterThanZero(TextBoxWatchDogNoReadTimeoutSeconds.Text, "Watch Dog no-read timeout seconds");
-                ValidateGreaterThanZero(TextBoxWatchDogRecentWriteWindowSeconds.Text, "Watch Dog recent-write window seconds");
+                ValidateZeroOrGreater(TextBoxWatchDogNoReadTimeoutSeconds.Text, "Watch Dog no-read timeout seconds");
+                ValidateZeroOrGreater(TextBoxWatchDogRecentWriteWindowSeconds.Text, "Watch Dog recent-write window seconds");
                 ValidateGreaterThanZero(TextBoxWatchDogCooldownSeconds.Text, "Watch Dog cooldown seconds");
                 ValidateGreaterThanZero(TextBoxWatchDogReopenDelayMilliseconds.Text, "Watch Dog reopen delay milliseconds");
             }
             catch (Exception ex)
             {
                 throw new Exception($"DCS-BIOS Error checking values : {Environment.NewLine}{ex.Message}");
+            }
+        }
+
+        private static void ValidateZeroOrGreater(string value, string fieldName)
+        {
+            try
+            {
+                var parsed = Convert.ToInt32(value);
+                if (parsed < 0)
+                {
+                    throw new Exception($"{fieldName} must be zero or greater.");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"{fieldName} : {ex.Message}");
             }
         }
 

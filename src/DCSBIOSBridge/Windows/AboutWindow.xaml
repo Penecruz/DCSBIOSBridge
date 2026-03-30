@@ -26,7 +26,7 @@
                 <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• DCS-BIOS network settings define where data is read from and written to.</TextBlock>
                 <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Delay between DCS-BIOS commands helps prevent command bursts; keep it above zero.</TextBlock>
                 <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Open all ports on startup automatically opens each configured serial port when the app starts.</TextBlock>
-                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Watch Dog settings recover from stalled serial activity by closing and reopening ports using the configured timing thresholds.</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Watch Dog settings recover from stalled serial activity by closing and reopening ports using the configured timing thresholds (set read or write timer to 0 to disable that timer).</TextBlock>
                 <TextBlock TextWrapping="Wrap" Margin="0,0,0,12">• Use lower watchdog values for faster recovery, but avoid overly aggressive values that can cause unnecessary reopen cycles.</TextBlock>
 
                 <Separator Margin="0,0,0,10" />
