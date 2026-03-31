@@ -90,6 +90,8 @@ namespace DCSBIOSBridge.misc
                         break;
                     case SerialPortStatus.Critical:
                         break;
+                    case SerialPortStatus.WatchDogBark:
+                        break;
                     case SerialPortStatus.IOError:
                         break;
                     case SerialPortStatus.TimeOutError:
@@ -120,11 +122,12 @@ namespace DCSBIOSBridge.misc
                 case SerialPortUserControlStatus.Created:
                     break;
                 case SerialPortUserControlStatus.Hidden:
-                case SerialPortUserControlStatus.Closed:
                     {
                         RemoveSerialPort(args.ComPort);
                         break;
                     }
+                case SerialPortUserControlStatus.Closed:
+                    break;
                 case SerialPortUserControlStatus.Check:
                     break;
                 case SerialPortUserControlStatus.DisposeDisabledPorts:

@@ -6,9 +6,10 @@
         xmlns:misc="clr-namespace:DCSBIOSBridge.misc"
         mc:Ignorable="d"
         WindowStartupLocation="CenterOwner"
-        Title="SerialPort Configuration" Height="390" Width="320" Icon="/images/app_image.jpg" UseLayoutRounding="True" RenderOptions.BitmapScalingMode="Fant" Loaded="SerialPortConfigWindow_OnLoaded">
+        Title="SerialPort Configuration" Height="420" Width="320" Icon="/images/app_image.jpg" UseLayoutRounding="True" RenderOptions.BitmapScalingMode="Fant" Loaded="SerialPortConfigWindow_OnLoaded">
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="25" />
             <RowDefinition Height="25" />
             <RowDefinition Height="25" />
             <RowDefinition Height="25" />
@@ -29,18 +30,20 @@
         </Grid.ColumnDefinitions>
 
         <Label Content="SerialPort : " Margin="0,0,0,0" VerticalAlignment="Top" FontWeight="ExtraBold" Grid.Column="0" Grid.Row="0" />
-        <Label Content="Baud : "  Grid.Column="0" Grid.Row="1"/>
-        <Label Content="Parity" Margin="0,0,0,0" VerticalAlignment="Top"  Grid.Column="0" Grid.Row="2"/>
-        <Label Content="StopBits" Margin="0,0,0,0" VerticalAlignment="Top"  Grid.Column="0" Grid.Row="3"/>
-        <Label Content="DataBits" Margin="0,0,0,0" VerticalAlignment="Top"  Grid.Column="0" Grid.Row="4"/>
-        <Label Content="HandShake" Margin="0,0,0,0" VerticalAlignment="Top"  Grid.Column="0" Grid.Row="5"/>
-        <Label Content="LineSignalRts" Margin="0,0,0,0" VerticalAlignment="Top"  Grid.Column="0" Grid.Row="6"/>
-        <Label Content="LineSignalDtr" Margin="0,0,0,0" VerticalAlignment="Top"  Grid.Column="0" Grid.Row="7"/>
-        <Label Content="Write timeout" Margin="0,0,0,0" VerticalAlignment="Top"  Grid.Column="0" Grid.Row="8"/>
-        <Label Content="Read timeout" Margin="0,0,0,0" VerticalAlignment="Top"  Grid.Column="0" Grid.Row="9"/>
+        <Label Content="Custom name : " Grid.Column="0" Grid.Row="1"/>
+        <Label Content="Baud : "  Grid.Column="0" Grid.Row="2"/>
+        <Label Content="Parity" Margin="0,0,0,0" VerticalAlignment="Top"  Grid.Column="0" Grid.Row="3"/>
+        <Label Content="StopBits" Margin="0,0,0,0" VerticalAlignment="Top"  Grid.Column="0" Grid.Row="4"/>
+        <Label Content="DataBits" Margin="0,0,0,0" VerticalAlignment="Top"  Grid.Column="0" Grid.Row="5"/>
+        <Label Content="HandShake" Margin="0,0,0,0" VerticalAlignment="Top"  Grid.Column="0" Grid.Row="6"/>
+        <Label Content="LineSignalRts" Margin="0,0,0,0" VerticalAlignment="Top"  Grid.Column="0" Grid.Row="7"/>
+        <Label Content="LineSignalDtr" Margin="0,0,0,0" VerticalAlignment="Top"  Grid.Column="0" Grid.Row="8"/>
+        <Label Content="Write timeout" Margin="0,0,0,0" VerticalAlignment="Top"  Grid.Column="0" Grid.Row="9"/>
+        <Label Content="Read timeout" Margin="0,0,0,0" VerticalAlignment="Top"  Grid.Column="0" Grid.Row="10"/>
 
         <Label Name="LabelSerialPortName" Content="SerialPort NAME HERE" FontWeight="ExtraBold"  Margin="0,0,5,0" VerticalAlignment="Top" Grid.Column="1" Grid.Row="0"/>
-        <ComboBox Name="ComboBoxBaud" SelectedIndex="3" Height="22" Margin="0,0,5,0"  Grid.Column="1" Grid.Row="1" SelectedValuePath="Content">
+        <TextBox Name="TextBoxCustomName" Height="22" Margin="0,0,5,0" Grid.Column="1" Grid.Row="1" MaxLength="60"/>
+        <ComboBox Name="ComboBoxBaud" SelectedIndex="3" Height="22" Margin="0,0,5,0"  Grid.Column="1" Grid.Row="2" SelectedValuePath="Content">
             <ComboBoxItem >57600</ComboBoxItem>
             <ComboBoxItem >115200</ComboBoxItem>
             <ComboBoxItem >230400</ComboBoxItem>
@@ -49,35 +52,35 @@
             <ComboBoxItem >500000</ComboBoxItem>
             <ComboBoxItem >921600</ComboBoxItem>
         </ComboBox>
-        <ComboBox Name="ComboBoxParity"  Height="22" Grid.Column="1" Grid.Row="2" SelectedIndex="0" SelectedValuePath="Content" Margin="0,0,5,0"  >
+        <ComboBox Name="ComboBoxParity"  Height="22" Grid.Column="1" Grid.Row="3" SelectedIndex="0" SelectedValuePath="Content" Margin="0,0,5,0"  >
             <ComboBoxItem>None</ComboBoxItem>
             <ComboBoxItem>Odd</ComboBoxItem>
             <ComboBoxItem>Even</ComboBoxItem>
             <ComboBoxItem>Mark</ComboBoxItem>
             <ComboBoxItem>Space</ComboBoxItem>
         </ComboBox>
-        <ComboBox Name="ComboBoxStopBits"   Height="22" SelectedIndex="0"  Grid.Column="1" Grid.Row="3" SelectedValuePath="Content" Margin="0,0,5,0"  >
+        <ComboBox Name="ComboBoxStopBits"   Height="22" SelectedIndex="0"  Grid.Column="1" Grid.Row="4" SelectedValuePath="Content" Margin="0,0,5,0"  >
             <ComboBoxItem >None</ComboBoxItem>
             <ComboBoxItem >One</ComboBoxItem>
             <ComboBoxItem >OnePointFive</ComboBoxItem>
             <ComboBoxItem >Two</ComboBoxItem>
         </ComboBox>
-        <ComboBox Name="ComboBoxDataBits"   Height="22" SelectedIndex="3"  Grid.Column="1" Grid.Row="4" SelectedValuePath="Content" Margin="0,0,5,0"  >
+        <ComboBox Name="ComboBoxDataBits"   Height="22" SelectedIndex="3"  Grid.Column="1" Grid.Row="5" SelectedValuePath="Content" Margin="0,0,5,0"  >
             <ComboBoxItem >5</ComboBoxItem>
             <ComboBoxItem >6</ComboBoxItem>
             <ComboBoxItem >7</ComboBoxItem>
             <ComboBoxItem >8</ComboBoxItem>
         </ComboBox>
-        <ComboBox Name="ComboBoxHandshake"   Height="22" SelectedIndex="0"  Grid.Column="1" Grid.Row="5" SelectedValuePath="Content" Margin="0,0,5,0"  >
+        <ComboBox Name="ComboBoxHandshake"   Height="22" SelectedIndex="0"  Grid.Column="1" Grid.Row="6" SelectedValuePath="Content" Margin="0,0,5,0"  >
             <ComboBoxItem >None</ComboBoxItem>
             <ComboBoxItem >RequestToSend</ComboBoxItem>
             <ComboBoxItem >RequestToSendXOnXOff</ComboBoxItem>
             <ComboBoxItem >XOnXOff</ComboBoxItem>
         </ComboBox>
-        <CheckBox Name="CheckBoxLineSignalRts" FlowDirection="RightToLeft" HorizontalAlignment="Left" VerticalAlignment="Center" Grid.Column="1" Grid.Row="6" ></CheckBox>
-        <CheckBox Name="CheckBoxLineSignalDtr" FlowDirection="RightToLeft" HorizontalAlignment="Left" VerticalAlignment="Center"  Grid.Column="1" Grid.Row="7"></CheckBox>
+        <CheckBox Name="CheckBoxLineSignalRts" FlowDirection="RightToLeft" HorizontalAlignment="Left" VerticalAlignment="Center" Grid.Column="1" Grid.Row="7" ></CheckBox>
+        <CheckBox Name="CheckBoxLineSignalDtr" FlowDirection="RightToLeft" HorizontalAlignment="Left" VerticalAlignment="Center"  Grid.Column="1" Grid.Row="8"></CheckBox>
 
-        <ComboBox Name="ComboBoxWriteTimeout"   Height="22" SelectedIndex="0"   Grid.Column="1" Grid.Row="8" SelectedValuePath="Content" Margin="0,0,5,0"  >
+        <ComboBox Name="ComboBoxWriteTimeout"   Height="22" SelectedIndex="0"   Grid.Column="1" Grid.Row="9" SelectedValuePath="Content" Margin="0,0,5,0"  >
             <ComboBoxItem >0</ComboBoxItem>
             <ComboBoxItem >5000</ComboBoxItem>
             <ComboBoxItem >7500</ComboBoxItem>
@@ -85,7 +88,7 @@
             <ComboBoxItem >40000</ComboBoxItem>
             <ComboBoxItem >3600000</ComboBoxItem>
         </ComboBox>
-        <ComboBox Name="ComboBoxReadTimeout"   Height="22" SelectedIndex="0"   Grid.Column="1" Grid.Row="9" SelectedValuePath="Content" Margin="0,0,5,0"  >
+        <ComboBox Name="ComboBoxReadTimeout"   Height="22" SelectedIndex="0"   Grid.Column="1" Grid.Row="10" SelectedValuePath="Content" Margin="0,0,5,0"  >
             <ComboBoxItem >0</ComboBoxItem>
             <ComboBoxItem >5000</ComboBoxItem>
             <ComboBoxItem >7500</ComboBoxItem>
@@ -94,9 +97,9 @@
             <ComboBoxItem >3600000</ComboBoxItem>
         </ComboBox>
 
-        <Label Content="revert to default settings" FontSize="9" Foreground="#0000FF" MouseEnter="{x:Static misc:Common.MouseEnter}" MouseLeave="{x:Static misc:Common.MouseLeave}" MouseDown="UIElement_OnMouseDown" VerticalAlignment="Bottom" Grid.Column="0" Grid.Row="11"></Label>
+        <Label Content="revert to default settings" FontSize="9" Foreground="#0000FF" MouseEnter="{x:Static misc:Common.MouseEnter}" MouseLeave="{x:Static misc:Common.MouseLeave}" MouseDown="UIElement_OnMouseDown" VerticalAlignment="Bottom" Grid.Column="0" Grid.Row="12"></Label>
 
-        <StackPanel Orientation="Horizontal" Grid.Column="0"  Grid.Row="12"  Grid.ColumnSpan="2" HorizontalAlignment="Right">
+        <StackPanel Orientation="Horizontal" Grid.Column="0"  Grid.Row="13"  Grid.ColumnSpan="2" HorizontalAlignment="Right">
             <Button Content="Ok" Height="23" VerticalAlignment="Bottom" Margin="10,0,0,10"  Width="75" Click="ButtonOk_OnClick" />
             <Button Content="Cancel" Height="23" VerticalAlignment="Bottom" Margin="10,0,10,10" Width="75" Click="ButtonCancel_OnClick" />
         </StackPanel>

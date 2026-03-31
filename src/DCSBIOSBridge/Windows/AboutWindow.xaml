@@ -4,24 +4,58 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="About DCS-BIOS Bridge" Height="400" Width="600" Loaded="WindowLoaded" Icon="/images/app_image.jpg" >
-    <Grid>
+        Title="About DCS-BIOS Bridge" Height="650" Width="700" Loaded="WindowLoaded" Icon="/images/app_image.jpg" MinHeight="450" MinWidth="600">
+    <Grid Margin="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
 
-        <Image Name="ImageSchema"  Source="/images/broker_schema.png" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2"  Grid.RowSpan="3" Tag="False" MinWidth="450" RenderOptions.BitmapScalingMode="Fant" IsEnabled="False" />
-        
-        <WrapPanel Orientation="Vertical" Grid.Column="1" Grid.Row="3" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="10,10,10,10">
-            <Button Name="ButtonOk" Content="Ok" VerticalAlignment="Bottom" Width="70" Click="ButtonOk_OnClick"></Button>
-        </WrapPanel>
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="8">
+                <Image Name="ImageSchema" Source="/images/broker_schema.png" Tag="False" MinWidth="450" MaxWidth="640" RenderOptions.BitmapScalingMode="Fant" IsEnabled="False" Stretch="Uniform" Margin="0,0,0,12" />
 
+                <TextBlock FontWeight="Bold" FontSize="18" Margin="0,0,0,8">DCS-BIOS Bridge</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,12">
+                    This bridge forwards and manages DCS-BIOS serial traffic between DCS and your connected hardware devices.
+                </TextBlock>
+
+                <Separator Margin="0,0,0,10" />
+
+                <TextBlock FontWeight="Bold" FontSize="16" Margin="0,0,0,8">Settings Notes</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• DCS-BIOS network settings define where data is read from and written to.</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Delay between DCS-BIOS commands helps prevent command bursts; keep it above zero.</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Open all ports on startup automatically opens each configured serial port when the app starts.</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Watch Dog settings recover from stalled serial activity by closing and reopening ports using the configured timing thresholds (set read or write timer to 0 to disable that timer).</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,12">• Use lower watchdog values for faster recovery, but avoid overly aggressive values that can cause unnecessary reopen cycles.</TextBlock>
+
+                <Separator Margin="0,0,0,10" />
+
+                <TextBlock FontWeight="Bold" FontSize="16" Margin="0,0,0,8">Latest Changelog (v1.2.0)</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Version 1.2.0 released.</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Added custom naming support for serial port configurations.</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Added an option to open all ports automatically on startup.</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Added Watch Dog to cycle a port closed then open if the connected device becomes unresponsive.</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,12">• Added Bridge and Watch Dog settings, including improved validation and in-app guidance.</TextBlock>
+
+                <Separator Margin="0,0,0,10" />
+
+                <TextBlock FontWeight="Bold" FontSize="16" Margin="0,0,0,8">Contributors</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,4">From DCS-Skunkworks:</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,4">• jdahlblom</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,4">• charliefoxtwo</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Mutex666</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,12">• Penecruz</TextBlock>
+
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,4">More information:</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,8">
+                    <Hyperlink RequestNavigate="HyperlinkRequestNavigate" NavigateUri="https://github.com/DCS-Skunkworks/DCSBIOSBridge/wiki">DCS-BIOS Bridge Wiki</Hyperlink>
+                </TextBlock>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button Name="ButtonOk" Content="Ok" Width="80" Click="ButtonOk_OnClick" />
+        </StackPanel>
     </Grid>
 </Window>

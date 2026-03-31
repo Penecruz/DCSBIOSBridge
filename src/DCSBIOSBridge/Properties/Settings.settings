@@ -5,6 +5,9 @@
     <Setting Name="ShowNewSerialPortsAutomatically" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
+    <Setting Name="OpenAllPortsOnStartup" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
     <Setting Name="LastProfileFileUsed" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
@@ -40,6 +43,18 @@
     </Setting>
     <Setting Name="DelayBetweenCommands" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">5</Value>
+    </Setting>
+    <Setting Name="WatchDogNoReadTimeoutSeconds" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">30</Value>
+    </Setting>
+    <Setting Name="WatchDogRecentWriteWindowSeconds" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">10</Value>
+    </Setting>
+    <Setting Name="WatchDogCooldownSeconds" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">15</Value>
+    </Setting>
+    <Setting Name="WatchDogReopenDelayMilliseconds" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">250</Value>
     </Setting>
   </Settings>
 </SettingsFile>

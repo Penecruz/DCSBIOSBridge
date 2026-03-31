@@ -108,6 +108,11 @@ namespace DCSBIOSBridge
 
                 LoadPorts();
 
+                if (Settings.Default.OpenAllPortsOnStartup)
+                {
+                    DBEventManager.BroadCastPortStatus(null, SerialPortStatus.Open);
+                }
+
                 SetShowInfoMenuItems();
 
                 SetWindowState();
@@ -162,6 +167,8 @@ namespace DCSBIOSBridge
                     case SerialPortStatus.Error:
                         break;
                     case SerialPortStatus.Critical:
+                        break;
+                    case SerialPortStatus.WatchDogBark:
                         break;
                     case SerialPortStatus.IOError:
                         break;

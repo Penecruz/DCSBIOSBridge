@@ -138,9 +138,15 @@ namespace DCSBIOSBridge.UserControls
                             break;
                         }
                     case SerialPortStatus.Opened:
-                        break;
+                        {
+                            Dispatcher.Invoke(() => ButtonConnection.IsChecked = true);
+                            break;
+                        }
                     case SerialPortStatus.Closed:
-                        break;
+                        {
+                            Dispatcher.Invoke(() => ButtonConnection.IsChecked = false);
+                            break;
+                        }
                     case SerialPortStatus.Added:
                     case SerialPortStatus.Hidden:
                         break;
@@ -157,12 +163,20 @@ namespace DCSBIOSBridge.UserControls
                             BroadCastClosedAndDispose(SerialPortUserControlStatus.Closed);
                             break;
                         }
+                    case SerialPortStatus.WatchDogBark:
+                        {
+                            WatchDogBarkCounter++;
+                            break;
+                        }
                     case SerialPortStatus.BytesWritten:
                         break;
                     case SerialPortStatus.BytesRead:
                         break;
                     case SerialPortStatus.Settings:
-                        break;
+                        {
+                            Dispatcher.Invoke(() => ShowInfo((HardwareInfoToShow)Settings.Default.ShowInfoType));
+                            break;
+                        }
                     default:
                         throw new ArgumentOutOfRangeException(e.SerialPortStatus.ToString());
                 }
@@ -194,7 +208,7 @@ namespace DCSBIOSBridge.UserControls
                         {
                             if (IsEnabled) return;
 
-                            BroadCastClosedAndDispose(SerialPortUserControlStatus.Closed);
+                            BroadCastClosedAndDispose(SerialPortUserControlStatus.Hidden);
                             break;
                         }
                     case SerialPortUserControlStatus.DoDispose:
@@ -265,16 +279,39 @@ namespace DCSBIOSBridge.UserControls
 
         private void ShowInfo(HardwareInfoToShow hardwareInfoToShow)
         {
+            var customOrFriendlyName = string.IsNullOrWhiteSpace(_serialPortShell.SerialPortSetting.CustomName)
+                ? _serialPortShell.FriendlyName
+                : _serialPortShell.SerialPortSetting.CustomName;
+
             switch (hardwareInfoToShow)
             {
                 case HardwareInfoToShow.Name:
                     {
-                        Dispatcher.Invoke(() => TextBoxFriendlyName.Text = _serialPortShell.FriendlyName);
+                        Dispatcher.Invoke(() => TextBoxFriendlyName.Text = customOrFriendlyName);
                         break;
                     }
                 case HardwareInfoToShow.VIDPID:
                     {
                         Dispatcher.Invoke(() => TextBoxFriendlyName.Text = _serialPortShell.VIDPID);
+                        break;
+                    }
+                case HardwareInfoToShow.CustomNameVidPidAndComPort:
+                    {
+                        var parts = new List<string>();
+
+                        if (!string.IsNullOrWhiteSpace(customOrFriendlyName))
+                        {
+                            parts.Add(customOrFriendlyName);
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(_serialPortShell.VIDPID))
+                        {
+                            parts.Add($"VID/PID: {_serialPortShell.VIDPID}");
+                        }
+
+                        parts.Add($"Port: {_serialPortShell.ComPort}");
+
+                        Dispatcher.Invoke(() => TextBoxFriendlyName.Text = string.Join(" | ", parts));
                         break;
                     }
             }
@@ -451,6 +488,20 @@ namespace DCSBIOSBridge.UserControls
                 OnPropertyChanged();
             }
         }
+
+        private int _watchDogBarkCounter;
+        public int WatchDogBarkCounter
+        {
+            get => _watchDogBarkCounter;
+            private set
+            {
+                _watchDogBarkCounter = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(WatchDogBarkCounterText));
+            }
+        }
+
+        public string WatchDogBarkCounterText => WatchDogBarkCounter.ToString();
 
 
         public string LastDCSBIOSCommands
