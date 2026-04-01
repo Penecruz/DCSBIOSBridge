@@ -29,6 +29,7 @@ namespace DCSBIOSBridge.Windows
         {
             //PopulateCombos();
             ShowSettings();
+            AppThemeManager.ApplyTitleBarTheme(this);
         }
 
         private void ShowSettings()

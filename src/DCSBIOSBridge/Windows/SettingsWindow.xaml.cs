@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Navigation;
 using DCS_BIOS;
+using DCSBIOSBridge.misc;
 using DCSBIOSBridge.Properties;
 
 namespace DCSBIOSBridge.Windows
@@ -43,6 +44,7 @@ namespace DCSBIOSBridge.Windows
                 LoadSettings();
                 SetEventsHandlers();
                 SetFormState();
+                AppThemeManager.ApplyTitleBarTheme(this);
                 _isLoaded = true;
             }
             catch (Exception exception)
@@ -60,6 +62,7 @@ namespace DCSBIOSBridge.Windows
             TextBoxDCSBIOSCommandDelay.TextChanged += DcsBiosDirty;
             CheckBoxOpenAllPortsOnStartup.Checked += BridgeSettingsDirty;
             CheckBoxOpenAllPortsOnStartup.Unchecked += BridgeSettingsDirty;
+            ComboBoxThemeMode.SelectionChanged += BridgeSettingsDirty;
             TextBoxWatchDogNoReadTimeoutSeconds.TextChanged += DcsBiosDirty;
             TextBoxWatchDogRecentWriteWindowSeconds.TextChanged += DcsBiosDirty;
             TextBoxWatchDogCooldownSeconds.TextChanged += DcsBiosDirty;
@@ -74,6 +77,7 @@ namespace DCSBIOSBridge.Windows
             TextBoxDCSBIOSToPort.Text = Settings.Default.DCSBiosPortTo;
             TextBoxDCSBIOSCommandDelay.Text = Settings.Default.DelayBetweenCommands.ToString();
             CheckBoxOpenAllPortsOnStartup.IsChecked = Settings.Default.OpenAllPortsOnStartup;
+            SetThemeModeSelection();
             TextBoxWatchDogNoReadTimeoutSeconds.Text = Settings.Default.WatchDogNoReadTimeoutSeconds.ToString();
             TextBoxWatchDogRecentWriteWindowSeconds.Text = Settings.Default.WatchDogRecentWriteWindowSeconds.ToString();
             TextBoxWatchDogCooldownSeconds.Text = Settings.Default.WatchDogCooldownSeconds.ToString();
@@ -100,6 +104,7 @@ namespace DCSBIOSBridge.Windows
                     Settings.Default.DCSBiosPortTo = PortToDCSBIOS;
                     Settings.Default.DelayBetweenCommands = Convert.ToInt32(TextBoxDCSBIOSCommandDelay.Text);
                     Settings.Default.OpenAllPortsOnStartup = CheckBoxOpenAllPortsOnStartup.IsChecked == true;
+                    Settings.Default.ThemeMode = GetSelectedThemeModeValue();
                     Settings.Default.WatchDogNoReadTimeoutSeconds = Convert.ToInt32(TextBoxWatchDogNoReadTimeoutSeconds.Text);
                     Settings.Default.WatchDogRecentWriteWindowSeconds = Convert.ToInt32(TextBoxWatchDogRecentWriteWindowSeconds.Text);
                     Settings.Default.WatchDogCooldownSeconds = Convert.ToInt32(TextBoxWatchDogCooldownSeconds.Text);
@@ -107,6 +112,7 @@ namespace DCSBIOSBridge.Windows
                     Settings.Default.Save();
 
                     DCSBIOS.GetInstance().DelayBetweenCommands = Convert.ToInt32(TextBoxDCSBIOSCommandDelay.Text);
+                    AppThemeManager.ApplyConfiguredTheme();
                 }
                 
                 DialogResult = true;
@@ -246,6 +252,46 @@ namespace DCSBIOSBridge.Windows
         {
             DCSBIOSChanged = true;
             ButtonOk.IsEnabled = true;
+        }
+
+        private int GetSelectedThemeModeValue()
+        {
+            if (ComboBoxThemeMode.SelectedItem is not ComboBoxItem comboBoxItem)
+            {
+                return (int)ThemeMode.FollowWindows;
+            }
+
+            return int.TryParse(comboBoxItem.Tag?.ToString(), out var mode)
+                ? mode
+                : (int)ThemeMode.FollowWindows;
+        }
+
+        private void SetThemeModeSelection()
+        {
+            var configuredMode = AppThemeManager.GetConfiguredThemeMode();
+
+            foreach (var item in ComboBoxThemeMode.Items)
+            {
+                if (item is not ComboBoxItem comboBoxItem)
+                {
+                    continue;
+                }
+
+                if (!int.TryParse(comboBoxItem.Tag?.ToString(), out var modeValue))
+                {
+                    continue;
+                }
+
+                if (modeValue != (int)configuredMode)
+                {
+                    continue;
+                }
+
+                ComboBoxThemeMode.SelectedItem = comboBoxItem;
+                return;
+            }
+
+            ComboBoxThemeMode.SelectedIndex = 0;
         }
         
         private void SettingsWindow_OnKeyDown(object sender, KeyEventArgs e)

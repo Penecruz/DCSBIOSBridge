@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         WindowStartupLocation="CenterOwner"
         Title="SerialPort Configuration" Height="420" Width="320" Icon="/images/app_image.jpg" UseLayoutRounding="True" RenderOptions.BitmapScalingMode="Fant" Loaded="SerialPortConfigWindow_OnLoaded">
-    <Grid>
+    <Grid Background="{DynamicResource AppBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="25" />
             <RowDefinition Height="25" />
