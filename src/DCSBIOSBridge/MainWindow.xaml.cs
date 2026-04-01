@@ -114,6 +114,7 @@ namespace DCSBIOSBridge
                 }
 
                 SetShowInfoMenuItems();
+                AppThemeManager.ApplyTitleBarTheme(this);
 
                 SetWindowState();
                 _formLoaded = true;
@@ -277,7 +278,14 @@ namespace DCSBIOSBridge
                                 {
                                     if (Dispatcher.Invoke(() => _serialPortUserControls.Any(o => o.Name == comPort)) == false)
                                     {
-                                        Dispatcher.Invoke(() => AddSerialPort(comPort));
+                                        Dispatcher.Invoke(() =>
+                                        {
+                                            AddSerialPort(comPort);
+                                            if (Settings.Default.OpenAllPortsOnStartup)
+                                            {
+                                                DBEventManager.BroadCastPortStatus(comPort, SerialPortStatus.Open);
+                                            }
+                                        });
                                     }
                                 }
                                 break;
@@ -457,7 +465,10 @@ namespace DCSBIOSBridge
             {
                 if (_serialPortUserControls.Count(o => o.Name == serialPortName) > 0) return;
 
-                var serialPortUserControl = new SerialPortUserControl(new SerialPortSetting { ComPort = serialPortName }, (HardwareInfoToShow)Settings.Default.ShowInfoType);
+                var existingPortSetting = _profileHandler.SerialPortSettings.FirstOrDefault(o => o.ComPort == serialPortName);
+                var serialPortSetting = existingPortSetting ?? new SerialPortSetting { ComPort = serialPortName };
+
+                var serialPortUserControl = new SerialPortUserControl(serialPortSetting, (HardwareInfoToShow)Settings.Default.ShowInfoType);
                 AddUserControlToUI(serialPortUserControl);
                 DBEventManager.BroadCastPortStatus(serialPortName, SerialPortStatus.Added, 0, null, serialPortUserControl.SerialPortSetting);
             }

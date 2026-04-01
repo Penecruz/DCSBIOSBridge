@@ -29,7 +29,7 @@
             </Style.Resources>
         </Style>
     </Window.Resources>
-    <Grid Name="MainGrid">
+    <Grid Name="MainGrid" Background="{DynamicResource AppBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="20" />
             <RowDefinition Height="40" />
@@ -84,7 +84,7 @@
                     </Image>
                 </Button>
                 <Button Click="ButtonOpen_OnClick">
-                    <Image Source="/images/OpenPL.bmp" ToolTip="Open"/>
+                    <Image Source="/OpenPL.png" ToolTip="Open"/>
                 </Button>
                 <Button Click="ButtonOpenInEditor_OnClick">
                     <Image Source="/images/Notepad_32x32.png" Name="ButtonImageNotepad"   ToolTip="Open text editor">
@@ -113,16 +113,17 @@
                     </Image>
                 </Button>
 
-                <customControls:UserControlSpinningWheel Margin="10,0,0,0" x:Name="ControlSpinningWheel"/>
-
-                <Image Source="Images/on_button.png" Margin="30,0,0,0" MouseDown="ButtonOpenPorts_OnClick" ToolTip="Open all ports" MouseEnter="UIElement_OnMouseEnterCursorArrow" MouseLeave="UIElement_OnMouseLeaveCursorArrow"/>
-                <Image Source="Images/off_button.png" Margin="10,0,0,0" MouseDown="ButtonClosePorts_OnClick"  ToolTip="Close all ports" MouseEnter="UIElement_OnMouseEnterCursorArrow" MouseLeave="UIElement_OnMouseLeaveCursorArrow"/>
+                <StackPanel Orientation="Horizontal" Margin="10,0,0,0" Background="Transparent" ToolBar.OverflowMode="Never">
+                    <customControls:UserControlSpinningWheel x:Name="ControlSpinningWheel"/>
+                    <Image Source="Images/on_button.png" Margin="30,0,0,0" MouseDown="ButtonOpenPorts_OnClick" ToolTip="Open all ports" MouseEnter="UIElement_OnMouseEnterCursorArrow" MouseLeave="UIElement_OnMouseLeaveCursorArrow"/>
+                    <Image Source="Images/off_button.png" Margin="10,0,0,0" MouseDown="ButtonClosePorts_OnClick" ToolTip="Close all ports" MouseEnter="UIElement_OnMouseEnterCursorArrow" MouseLeave="UIElement_OnMouseLeaveCursorArrow"/>
+                </StackPanel>
 
 
             </ToolBar>
         </ToolBarTray>
 
-        <ScrollViewer Grid.Row="3" Margin="5,5,5,5">
+        <ScrollViewer Grid.Row="3" Margin="5,5,5,5" Background="{DynamicResource AppBackgroundBrush}">
             <ItemsControl Name="ItemsControlPorts" >
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>

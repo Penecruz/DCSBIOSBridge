@@ -1,12 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <AssemblyVersion>1.2.0</AssemblyVersion>
-    <FileVersion>1.2.0</FileVersion>
-    <InformationalVersion>1.2.0</InformationalVersion>
+    <AssemblyVersion>1.2.1</AssemblyVersion>
+    <FileVersion>1.2.1</FileVersion>
+    <InformationalVersion>1.2.1</InformationalVersion>
   </PropertyGroup>
   <PropertyGroup>
     <PackageId>DCSBIOSBridge</PackageId>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>disable</Nullable>
@@ -41,12 +41,12 @@
     <None Remove="images\Notepad_32x32.png" />
     <None Remove="images\off_button.png" />
     <None Remove="images\on_button.png" />
-    <None Remove="images\OpenPL.bmp" />
     <None Remove="images\red.png" />
     <None Remove="images\SaveHL.bmp" />
     <None Remove="images\Search.png" />
     <None Remove="images\settings_image.png" />
     <None Remove="images\yellow1.png" />
+    <None Remove="OpenPL.png" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NLog" Version="5.2.8" />
@@ -78,12 +78,12 @@
     <Resource Include="images\Notepad_32x32.png" />
     <Resource Include="images\off_button.png" />
     <Resource Include="images\on_button.png" />
-    <Resource Include="images\OpenPL.bmp" />
     <Resource Include="images\red.png" />
     <Resource Include="images\SaveHL.bmp" />
     <Resource Include="images\Search.png" />
     <Resource Include="images\settings_image.png" />
     <Resource Include="images\yellow1.png" />
+    <Resource Include="OpenPL.png" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Settings.Designer.cs">

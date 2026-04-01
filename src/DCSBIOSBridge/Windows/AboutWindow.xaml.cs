@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Windows;
 using System.Windows.Navigation;
+using DCSBIOSBridge.misc;
 
 namespace DCSBIOSBridge.Windows
 {
@@ -17,7 +18,7 @@ namespace DCSBIOSBridge.Windows
 
         private void WindowLoaded(object sender, RoutedEventArgs e)
         {
-            
+            AppThemeManager.ApplyTitleBarTheme(this);
         }
 
         private void HyperlinkRequestNavigate(object sender, RequestNavigateEventArgs e)

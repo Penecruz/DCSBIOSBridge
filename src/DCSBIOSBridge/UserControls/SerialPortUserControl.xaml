@@ -12,6 +12,17 @@
             <Setter Property="Padding" Value="0,0,0,0"></Setter>
         </Style>
         <Style x:Key="OnOffToggleImageStyle" TargetType="ToggleButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
             <Style.Triggers>
                 <Trigger Property="IsChecked" Value="True">
                     <Setter Property="Content">
@@ -39,7 +50,7 @@
             </Style.Triggers>
         </Style>
     </UserControl.Style>
-    <Border BorderBrush="Black" BorderThickness="2" CornerRadius="8,8,8,8" Margin="0,0,5,0">
+    <Border BorderBrush="{DynamicResource AppBorderBrush}" Background="{DynamicResource AppSurfaceBrush}" BorderThickness="2" CornerRadius="8,8,8,8" Margin="0,0,5,0">
         <Grid Margin="10,10,10,10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="30" />
@@ -84,7 +95,7 @@
             </WrapPanel>
 
             <DockPanel Grid.Column="2" Grid.Row="6" Grid.ColumnSpan="4" VerticalAlignment="Bottom" LastChildFill="True">
-                <TextBox Name="TextBoxFriendlyName" IsReadOnly="True" IsHitTestVisible="False" Background="Transparent" TextWrapping="Wrap" BorderBrush="Transparent" MaxHeight="40" FontSize="14" FontWeight="Bold" HorizontalAlignment="Stretch"/>
+                <TextBox Name="TextBoxFriendlyName" IsReadOnly="True" IsHitTestVisible="False" Background="Transparent" Foreground="{DynamicResource AppForegroundBrush}" TextWrapping="Wrap" BorderBrush="Transparent" MaxHeight="40" FontSize="14" FontWeight="Bold" HorizontalAlignment="Stretch"/>
             </DockPanel>
 
             <DockPanel Grid.Column="3" Grid.Row="0" Grid.ColumnSpan="3" HorizontalAlignment="Right">
