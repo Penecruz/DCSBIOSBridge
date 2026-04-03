@@ -44,6 +44,7 @@
             </ComboBox>
 
             <Label FontWeight="Bold" Margin="0,10,0,0" ToolTip="Configure automatic serial-port recovery when read activity appears stalled.">Watch Dog Settings</Label>
+            <CheckBox Name="CheckBoxWatchDogEnabled" Content="Enable Watch Dog" Margin="0,0,0,0" ToolTip="Enable or disable all watchdog-based automatic recovery behavior. Read/write timer values still control bark conditions when enabled."/>
             <Label Content="No-read timeout seconds (>=0)" Margin="0,0,0,0" VerticalAlignment="Top" ToolTip="If no serial reads occur for this many seconds while writes are still active, the watchdog will bark. Set to 0 to disable the read timer."/>
             <TextBox Name="TextBoxWatchDogNoReadTimeoutSeconds" Height="23" Margin="0,0,0,0" TextWrapping="Wrap" Text="30" ToolTip="Stall detection threshold in seconds. 0 disables read-timer barking."/>
             <Label Content="Recent-write window seconds (>=0)" Margin="0,0,0,0" VerticalAlignment="Top" ToolTip="Writes must have occurred within this window for stall detection to be considered active. Set to 0 to disable the write timer gate."/>

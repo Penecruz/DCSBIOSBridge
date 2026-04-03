@@ -40,6 +40,12 @@ namespace DCSBIOSBridge
         private readonly SerialPortsProfileHandler _profileHandler = new();
         private readonly SerialPortService _serialPortService = new();
         private List<SerialPortUserControl> _serialPortUserControls = new();
+        private readonly Dictionary<string, CancellationTokenSource> _pendingRemovedPortRescans = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, TaskCompletionSource<bool>> _pendingRestoredPortOpenSignals = new(StringComparer.OrdinalIgnoreCase);
+        private const int RemovedPortRescanIntervalMilliseconds = 10000;
+        private const int RemovedPortRescanMaxDurationMilliseconds = 60000;
+        private static readonly int[] RestoredPortOpenRetryDelaysMilliseconds = [10000, 20000, 30000];
+        private const int RestoredPortOpenAttemptWaitMilliseconds = 7000;
 
         public MainWindow()
         {
@@ -71,6 +77,8 @@ namespace DCSBIOSBridge
                 DBEventManager.DetachSerialPortUserControlListener(this);
                 DBEventManager.DetachSettingsDirtyListener(this);
                 BIOSEventHandler.DetachConnectionListener(this);
+                CancelAllPendingRemovedPortRescans();
+                CancelAllPendingRestoredPortOpenSignals();
             }
 
             //  free unmanaged resources (unmanaged objects) and override a finalizer below.
@@ -153,7 +161,10 @@ namespace DCSBIOSBridge
                     case SerialPortStatus.Close:
                         break;
                     case SerialPortStatus.Opened:
-                        break;
+                        {
+                            CompleteRestoredPortOpenSignal(e.SerialPortName, true);
+                            break;
+                        }
                     case SerialPortStatus.Closed:
                         break;
                     case SerialPortStatus.Added:
@@ -166,15 +177,47 @@ namespace DCSBIOSBridge
                     case SerialPortStatus.Ok:
                         break;
                     case SerialPortStatus.Error:
-                        break;
+                        {
+                            if (!string.IsNullOrWhiteSpace(e.SerialPortName))
+                            {
+                                Logger.Warn($"Error status received for {e.SerialPortName}. Scheduling removed-port rescan.");
+                                CompleteRestoredPortOpenSignal(e.SerialPortName, false);
+                                ScheduleRemovedPortRescan(e.SerialPortName);
+                            }
+                            break;
+                        }
                     case SerialPortStatus.Critical:
-                        break;
+                        {
+                            if (!string.IsNullOrWhiteSpace(e.SerialPortName))
+                            {
+                                Logger.Warn($"Critical serial port status received for {e.SerialPortName}. Scheduling removed-port rescan.");
+                                CompleteRestoredPortOpenSignal(e.SerialPortName, false);
+                                ScheduleRemovedPortRescan(e.SerialPortName);
+                            }
+                            break;
+                        }
                     case SerialPortStatus.WatchDogBark:
                         break;
                     case SerialPortStatus.IOError:
-                        break;
+                        {
+                            if (!string.IsNullOrWhiteSpace(e.SerialPortName))
+                            {
+                                Logger.Warn($"IO error status received for {e.SerialPortName}. Scheduling removed-port rescan.");
+                                CompleteRestoredPortOpenSignal(e.SerialPortName, false);
+                                ScheduleRemovedPortRescan(e.SerialPortName);
+                            }
+                            break;
+                        }
                     case SerialPortStatus.TimeOutError:
-                        break;
+                        {
+                            if (!string.IsNullOrWhiteSpace(e.SerialPortName))
+                            {
+                                Logger.Warn($"Timeout error status received for {e.SerialPortName}. Scheduling removed-port rescan.");
+                                CompleteRestoredPortOpenSignal(e.SerialPortName, false);
+                                ScheduleRemovedPortRescan(e.SerialPortName);
+                            }
+                            break;
+                        }
                     case SerialPortStatus.BytesWritten:
                         break;
                     case SerialPortStatus.BytesRead:
@@ -276,6 +319,8 @@ namespace DCSBIOSBridge
                             {
                                 foreach (var comPort in comPorts)
                                 {
+                                    CancelPendingRemovedPortRescan(comPort, "insertion event");
+
                                     if (Dispatcher.Invoke(() => _serialPortUserControls.Any(o => o.Name == comPort)) == false)
                                     {
                                         Dispatcher.Invoke(() =>
@@ -292,7 +337,11 @@ namespace DCSBIOSBridge
                             }
                         case WindowsSerialPortEventType.Removal:
                         {
-                            // Handled via other means
+                            foreach (var comPort in comPorts)
+                            {
+                                ScheduleRemovedPortRescan(comPort);
+                            }
+
                             break;
                         }
                     }
@@ -318,6 +367,230 @@ namespace DCSBIOSBridge
             }
 
             SetWindowState();
+        }
+
+        private void ScheduleRemovedPortRescan(string comPort)
+        {
+            if (!Settings.Default.WatchDogEnabled)
+            {
+                Logger.Info($"Watch Dog is disabled. Skipping removed-port rescan scheduling for {comPort}.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(comPort))
+            {
+                return;
+            }
+
+            CancellationTokenSource cancellationTokenSource;
+
+            lock (_lockObject)
+            {
+                if (_pendingRemovedPortRescans.TryGetValue(comPort, out var existingTokenSource))
+                {
+                    Logger.Info($"Replacing pending removed-port rescan for {comPort}.");
+                    existingTokenSource.Cancel();
+                    existingTokenSource.Dispose();
+                }
+
+                cancellationTokenSource = new CancellationTokenSource();
+                _pendingRemovedPortRescans[comPort] = cancellationTokenSource;
+            }
+
+            Logger.Info($"Scheduled removed-port rescan for {comPort} every {RemovedPortRescanIntervalMilliseconds} ms for up to {RemovedPortRescanMaxDurationMilliseconds} ms.");
+
+            _ = TryRestoreRemovedPortAsync(comPort, cancellationTokenSource.Token);
+        }
+
+        private async Task TryRestoreRemovedPortAsync(string comPort, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var attempts = 0;
+                var startedAt = DateTime.UtcNow;
+
+                while (true)
+                {
+                    await Task.Delay(RemovedPortRescanIntervalMilliseconds, cancellationToken);
+                    attempts++;
+
+                    var elapsed = DateTime.UtcNow - startedAt;
+                    Logger.Info($"Running removed-port rescan attempt {attempts} for {comPort} at +{elapsed.TotalSeconds:0}s.");
+
+                    var serialPorts = Common.GetSerialPortNames();
+                    if (serialPorts.Any(o => o.Equals(comPort, StringComparison.OrdinalIgnoreCase)) == false)
+                    {
+                        if (elapsed.TotalMilliseconds >= RemovedPortRescanMaxDurationMilliseconds)
+                        {
+                            Logger.Warn($"Removed-port rescan timed out for {comPort} after {attempts} attempts (+{elapsed.TotalSeconds:0}s). Last available ports: {string.Join(", ", serialPorts)}");
+                            return;
+                        }
+
+                        Logger.Warn($"Removed-port rescan did not find {comPort} on attempt {attempts}. Available ports: {string.Join(", ", serialPorts)}");
+                        continue;
+                    }
+
+                    Dispatcher.Invoke(() =>
+                    {
+                        if (_serialPortUserControls.Any(o => o.Name.Equals(comPort, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            Logger.Info($"Removed-port rescan found {comPort}, but UI control already exists. Skipping re-add.");
+                            return;
+                        }
+
+                        AddSerialPort(comPort);
+                        DBEventManager.BroadCastPortStatus(comPort, SerialPortStatus.WatchDogBark);
+
+                        Logger.Info($"Removed-port rescan re-added {comPort} and emitted WatchDogBark.");
+                    });
+
+                    if (Settings.Default.OpenAllPortsOnStartup)
+                    {
+                        await TryOpenRestoredPortWithRetriesAsync(comPort, cancellationToken);
+                    }
+
+                    return;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Logger.Info($"Removed-port rescan canceled for {comPort}.");
+            }
+            catch (Exception ex)
+            {
+                Common.ShowErrorMessageBox(ex);
+            }
+            finally
+            {
+                lock (_lockObject)
+                {
+                    if (_pendingRemovedPortRescans.TryGetValue(comPort, out var tokenSource) && tokenSource.Token == cancellationToken)
+                    {
+                        _pendingRemovedPortRescans.Remove(comPort);
+                        tokenSource.Dispose();
+                    }
+                }
+            }
+        }
+
+        private async Task TryOpenRestoredPortWithRetriesAsync(string comPort, CancellationToken cancellationToken)
+        {
+            Logger.Info($"OpenAllPortsOnStartup is enabled. Starting delayed open retries for restored port {comPort}.");
+
+            for (var i = 0; i < RestoredPortOpenRetryDelaysMilliseconds.Length; i++)
+            {
+                var delayMs = RestoredPortOpenRetryDelaysMilliseconds[i];
+                await Task.Delay(delayMs, cancellationToken);
+
+                if (Dispatcher.Invoke(() => _serialPortUserControls.Any(o => o.Name.Equals(comPort, StringComparison.OrdinalIgnoreCase))) == false)
+                {
+                    Logger.Info($"Restored port {comPort} no longer exists in UI before open attempt {i + 1}. Stopping open retries.");
+                    return;
+                }
+
+                var openSignal = RegisterRestoredPortOpenSignal(comPort);
+
+                Logger.Info($"Opening restored port {comPort} on retry attempt {i + 1} after waiting {delayMs} ms.");
+                DBEventManager.BroadCastPortStatus(comPort, SerialPortStatus.Open);
+
+                var completedTask = await Task.WhenAny(openSignal.Task, Task.Delay(RestoredPortOpenAttemptWaitMilliseconds, cancellationToken));
+                if (completedTask == openSignal.Task && openSignal.Task.Result)
+                {
+                    Logger.Info($"Restored port {comPort} opened successfully on retry attempt {i + 1}.");
+                    return;
+                }
+
+                Logger.Warn($"Restored port {comPort} did not open successfully on retry attempt {i + 1}.");
+            }
+
+            Logger.Warn($"Restored port {comPort} failed to open after {RestoredPortOpenRetryDelaysMilliseconds.Length} retry attempts.");
+        }
+
+        private TaskCompletionSource<bool> RegisterRestoredPortOpenSignal(string comPort)
+        {
+            lock (_lockObject)
+            {
+                if (_pendingRestoredPortOpenSignals.TryGetValue(comPort, out var existingSignal))
+                {
+                    existingSignal.TrySetCanceled();
+                }
+
+                var signal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                _pendingRestoredPortOpenSignals[comPort] = signal;
+                return signal;
+            }
+        }
+
+        private void CompleteRestoredPortOpenSignal(string comPort, bool success)
+        {
+            if (string.IsNullOrWhiteSpace(comPort))
+            {
+                return;
+            }
+
+            lock (_lockObject)
+            {
+                if (_pendingRestoredPortOpenSignals.TryGetValue(comPort, out var signal) == false)
+                {
+                    return;
+                }
+
+                _pendingRestoredPortOpenSignals.Remove(comPort);
+                signal.TrySetResult(success);
+            }
+        }
+
+        private void CancelAllPendingRestoredPortOpenSignals()
+        {
+            lock (_lockObject)
+            {
+                foreach (var signal in _pendingRestoredPortOpenSignals.Values)
+                {
+                    signal.TrySetCanceled();
+                }
+
+                _pendingRestoredPortOpenSignals.Clear();
+            }
+        }
+
+        private void CancelPendingRemovedPortRescan(string comPort, string reason = "unspecified")
+        {
+            if (string.IsNullOrWhiteSpace(comPort))
+            {
+                return;
+            }
+
+            lock (_lockObject)
+            {
+                if (_pendingRemovedPortRescans.TryGetValue(comPort, out var tokenSource) == false)
+                {
+                    return;
+                }
+
+                _pendingRemovedPortRescans.Remove(comPort);
+                tokenSource.Cancel();
+                tokenSource.Dispose();
+                Logger.Info($"Canceled pending removed-port rescan for {comPort}. Reason: {reason}.");
+            }
+        }
+
+        private void CancelAllPendingRemovedPortRescans()
+        {
+            lock (_lockObject)
+            {
+                var cancelledCount = _pendingRemovedPortRescans.Count;
+                foreach (var tokenSource in _pendingRemovedPortRescans.Values)
+                {
+                    tokenSource.Cancel();
+                    tokenSource.Dispose();
+                }
+
+                _pendingRemovedPortRescans.Clear();
+                if (cancelledCount > 0)
+                {
+                    Logger.Info($"Canceled {cancelledCount} pending removed-port rescans during cleanup.");
+                }
+            }
         }
 
         private void OpenProfile()
