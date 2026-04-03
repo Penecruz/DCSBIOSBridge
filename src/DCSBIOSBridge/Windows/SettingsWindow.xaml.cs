@@ -62,6 +62,8 @@ namespace DCSBIOSBridge.Windows
             TextBoxDCSBIOSCommandDelay.TextChanged += DcsBiosDirty;
             CheckBoxOpenAllPortsOnStartup.Checked += BridgeSettingsDirty;
             CheckBoxOpenAllPortsOnStartup.Unchecked += BridgeSettingsDirty;
+            CheckBoxWatchDogEnabled.Checked += BridgeSettingsDirty;
+            CheckBoxWatchDogEnabled.Unchecked += BridgeSettingsDirty;
             ComboBoxThemeMode.SelectionChanged += BridgeSettingsDirty;
             TextBoxWatchDogNoReadTimeoutSeconds.TextChanged += DcsBiosDirty;
             TextBoxWatchDogRecentWriteWindowSeconds.TextChanged += DcsBiosDirty;
@@ -77,6 +79,7 @@ namespace DCSBIOSBridge.Windows
             TextBoxDCSBIOSToPort.Text = Settings.Default.DCSBiosPortTo;
             TextBoxDCSBIOSCommandDelay.Text = Settings.Default.DelayBetweenCommands.ToString();
             CheckBoxOpenAllPortsOnStartup.IsChecked = Settings.Default.OpenAllPortsOnStartup;
+            CheckBoxWatchDogEnabled.IsChecked = Settings.Default.WatchDogEnabled;
             SetThemeModeSelection();
             TextBoxWatchDogNoReadTimeoutSeconds.Text = Settings.Default.WatchDogNoReadTimeoutSeconds.ToString();
             TextBoxWatchDogRecentWriteWindowSeconds.Text = Settings.Default.WatchDogRecentWriteWindowSeconds.ToString();
@@ -104,6 +107,7 @@ namespace DCSBIOSBridge.Windows
                     Settings.Default.DCSBiosPortTo = PortToDCSBIOS;
                     Settings.Default.DelayBetweenCommands = Convert.ToInt32(TextBoxDCSBIOSCommandDelay.Text);
                     Settings.Default.OpenAllPortsOnStartup = CheckBoxOpenAllPortsOnStartup.IsChecked == true;
+                    Settings.Default.WatchDogEnabled = CheckBoxWatchDogEnabled.IsChecked == true;
                     Settings.Default.ThemeMode = GetSelectedThemeModeValue();
                     Settings.Default.WatchDogNoReadTimeoutSeconds = Convert.ToInt32(TextBoxWatchDogNoReadTimeoutSeconds.Text);
                     Settings.Default.WatchDogRecentWriteWindowSeconds = Convert.ToInt32(TextBoxWatchDogRecentWriteWindowSeconds.Text);

@@ -241,6 +241,18 @@ namespace DCSBIOSBridge.Properties {
 
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool WatchDogEnabled {
+            get {
+                return ((bool)(this["WatchDogEnabled"]));
+            }
+            set {
+                this["WatchDogEnabled"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("0")]
         public int ThemeMode {
             get {

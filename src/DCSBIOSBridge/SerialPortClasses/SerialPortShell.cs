@@ -139,10 +139,12 @@ namespace DCSBIOSBridge.SerialPortClasses
             _safeSerialPort.ErrorReceived += _serialReceiver.SerialPortError;
 
             ApplyPortConfig();
+            var openSucceeded = false;
             try
             {
                 GetFriendlyName();
                 _safeSerialPort.Open();
+                openSucceeded = _safeSerialPort.IsOpen;
             }
             catch (IOException e)
             {
@@ -151,12 +153,25 @@ namespace DCSBIOSBridge.SerialPortClasses
                     Common.ShowErrorMessageBox(e, $"Failed to open port {SerialPortSetting.ComPort}.");
                 }
                 Logger.Error(e);
+                DBEventManager.BroadCastPortStatus(SerialPortSetting.ComPort, SerialPortStatus.Error);
+            }
+            catch (Exception e)
+            {
+                if (showErrorPopup)
+                {
+                    Common.ShowErrorMessageBox(e, $"Failed to open port {SerialPortSetting.ComPort}.");
+                }
+                Logger.Error(e);
+                DBEventManager.BroadCastPortStatus(SerialPortSetting.ComPort, SerialPortStatus.Error);
             }
 
-            _portShouldBeOpen = true;
+            _portShouldBeOpen = openSucceeded;
 
-            _ = Task.Run(SerialDataWrite);
-            DBEventManager.BroadCastPortStatus(SerialPortSetting.ComPort, SerialPortStatus.Opened);
+            if (openSucceeded)
+            {
+                _ = Task.Run(SerialDataWrite);
+                DBEventManager.BroadCastPortStatus(SerialPortSetting.ComPort, SerialPortStatus.Opened);
+            }
         }
 
         public bool IsOpen => _safeSerialPort != null && _safeSerialPort.IsOpen;
@@ -490,6 +505,11 @@ namespace DCSBIOSBridge.SerialPortClasses
 
         private bool ShouldWatchDogBark(DateTime utcNow)
         {
+            if (!Settings.Default.WatchDogEnabled)
+            {
+                return false;
+            }
+
             var watchDogNoReadTimeoutSeconds = Settings.Default.WatchDogNoReadTimeoutSeconds;
             var watchDogRecentWriteWindowSeconds = Settings.Default.WatchDogRecentWriteWindowSeconds;
             var watchDogNoReadTimeout = TimeSpan.FromSeconds(Math.Max(1, watchDogNoReadTimeoutSeconds));
