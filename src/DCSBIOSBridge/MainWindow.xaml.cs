@@ -41,11 +41,7 @@ namespace DCSBIOSBridge
         private readonly SerialPortService _serialPortService = new();
         private List<SerialPortUserControl> _serialPortUserControls = new();
         private readonly Dictionary<string, CancellationTokenSource> _pendingRemovedPortRescans = new(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, TaskCompletionSource<bool>> _pendingRestoredPortOpenSignals = new(StringComparer.OrdinalIgnoreCase);
-        private const int RemovedPortRescanIntervalMilliseconds = 10000;
-        private const int RemovedPortRescanMaxDurationMilliseconds = 60000;
-        private static readonly int[] RestoredPortOpenRetryDelaysMilliseconds = [10000, 20000, 30000];
-        private const int RestoredPortOpenAttemptWaitMilliseconds = 7000;
+        private const int RemovedPortRestoreDelayMilliseconds = 20000;
 
         public MainWindow()
         {
@@ -78,7 +74,6 @@ namespace DCSBIOSBridge
                 DBEventManager.DetachSettingsDirtyListener(this);
                 BIOSEventHandler.DetachConnectionListener(this);
                 CancelAllPendingRemovedPortRescans();
-                CancelAllPendingRestoredPortOpenSignals();
             }
 
             //  free unmanaged resources (unmanaged objects) and override a finalizer below.
@@ -162,7 +157,6 @@ namespace DCSBIOSBridge
                         break;
                     case SerialPortStatus.Opened:
                         {
-                            CompleteRestoredPortOpenSignal(e.SerialPortName, true);
                             break;
                         }
                     case SerialPortStatus.Closed:
@@ -181,7 +175,6 @@ namespace DCSBIOSBridge
                             if (!string.IsNullOrWhiteSpace(e.SerialPortName))
                             {
                                 Logger.Warn($"Error status received for {e.SerialPortName}. Scheduling removed-port rescan.");
-                                CompleteRestoredPortOpenSignal(e.SerialPortName, false);
                                 ScheduleRemovedPortRescan(e.SerialPortName);
                             }
                             break;
@@ -191,7 +184,6 @@ namespace DCSBIOSBridge
                             if (!string.IsNullOrWhiteSpace(e.SerialPortName))
                             {
                                 Logger.Warn($"Critical serial port status received for {e.SerialPortName}. Scheduling removed-port rescan.");
-                                CompleteRestoredPortOpenSignal(e.SerialPortName, false);
                                 ScheduleRemovedPortRescan(e.SerialPortName);
                             }
                             break;
@@ -203,7 +195,6 @@ namespace DCSBIOSBridge
                             if (!string.IsNullOrWhiteSpace(e.SerialPortName))
                             {
                                 Logger.Warn($"IO error status received for {e.SerialPortName}. Scheduling removed-port rescan.");
-                                CompleteRestoredPortOpenSignal(e.SerialPortName, false);
                                 ScheduleRemovedPortRescan(e.SerialPortName);
                             }
                             break;
@@ -213,7 +204,6 @@ namespace DCSBIOSBridge
                             if (!string.IsNullOrWhiteSpace(e.SerialPortName))
                             {
                                 Logger.Warn($"Timeout error status received for {e.SerialPortName}. Scheduling removed-port rescan.");
-                                CompleteRestoredPortOpenSignal(e.SerialPortName, false);
                                 ScheduleRemovedPortRescan(e.SerialPortName);
                             }
                             break;
@@ -319,7 +309,11 @@ namespace DCSBIOSBridge
                             {
                                 foreach (var comPort in comPorts)
                                 {
-                                    CancelPendingRemovedPortRescan(comPort, "insertion event");
+                                    if (HasPendingRemovedPortRescan(comPort))
+                                    {
+                                        Logger.Info($"Insertion event detected for {comPort}, but delayed restore is already pending. Skipping immediate re-add.");
+                                        continue;
+                                    }
 
                                     if (Dispatcher.Invoke(() => _serialPortUserControls.Any(o => o.Name == comPort)) == false)
                                     {
@@ -397,7 +391,7 @@ namespace DCSBIOSBridge
                 _pendingRemovedPortRescans[comPort] = cancellationTokenSource;
             }
 
-            Logger.Info($"Scheduled removed-port rescan for {comPort} every {RemovedPortRescanIntervalMilliseconds} ms for up to {RemovedPortRescanMaxDurationMilliseconds} ms.");
+            Logger.Info($"Scheduled delayed removed-port restore for {comPort} in {RemovedPortRestoreDelayMilliseconds} ms.");
 
             _ = TryRestoreRemovedPortAsync(comPort, cancellationTokenSource.Token);
         }
@@ -406,51 +400,31 @@ namespace DCSBIOSBridge
         {
             try
             {
-                var attempts = 0;
-                var startedAt = DateTime.UtcNow;
+                await Task.Delay(RemovedPortRestoreDelayMilliseconds, cancellationToken);
 
-                while (true)
+                var serialPorts = Common.GetSerialPortNames();
+                if (serialPorts.Any(o => o.Equals(comPort, StringComparison.OrdinalIgnoreCase)) == false)
                 {
-                    await Task.Delay(RemovedPortRescanIntervalMilliseconds, cancellationToken);
-                    attempts++;
+                    Logger.Warn($"Delayed removed-port restore did not find {comPort} after waiting {RemovedPortRestoreDelayMilliseconds} ms. Available ports: {string.Join(", ", serialPorts)}");
+                    return;
+                }
 
-                    var elapsed = DateTime.UtcNow - startedAt;
-                    Logger.Info($"Running removed-port rescan attempt {attempts} for {comPort} at +{elapsed.TotalSeconds:0}s.");
-
-                    var serialPorts = Common.GetSerialPortNames();
-                    if (serialPorts.Any(o => o.Equals(comPort, StringComparison.OrdinalIgnoreCase)) == false)
+                Dispatcher.Invoke(() =>
+                {
+                    if (_serialPortUserControls.Any(o => o.Name.Equals(comPort, StringComparison.OrdinalIgnoreCase)) == false)
                     {
-                        if (elapsed.TotalMilliseconds >= RemovedPortRescanMaxDurationMilliseconds)
-                        {
-                            Logger.Warn($"Removed-port rescan timed out for {comPort} after {attempts} attempts (+{elapsed.TotalSeconds:0}s). Last available ports: {string.Join(", ", serialPorts)}");
-                            return;
-                        }
-
-                        Logger.Warn($"Removed-port rescan did not find {comPort} on attempt {attempts}. Available ports: {string.Join(", ", serialPorts)}");
-                        continue;
+                        AddSerialPort(comPort);
                     }
 
-                    Dispatcher.Invoke(() =>
-                    {
-                        if (_serialPortUserControls.Any(o => o.Name.Equals(comPort, StringComparison.OrdinalIgnoreCase)))
-                        {
-                            Logger.Info($"Removed-port rescan found {comPort}, but UI control already exists. Skipping re-add.");
-                            return;
-                        }
-
-                        AddSerialPort(comPort);
-                        DBEventManager.BroadCastPortStatus(comPort, SerialPortStatus.WatchDogBark);
-
-                        Logger.Info($"Removed-port rescan re-added {comPort} and emitted WatchDogBark.");
-                    });
+                    DBEventManager.BroadCastPortStatus(comPort, SerialPortStatus.WatchDogBark);
 
                     if (Settings.Default.OpenAllPortsOnStartup)
                     {
-                        await TryOpenRestoredPortWithRetriesAsync(comPort, cancellationToken);
+                        DBEventManager.BroadCastPortStatus(comPort, SerialPortStatus.Open);
                     }
 
-                    return;
-                }
+                    Logger.Info($"Delayed removed-port restore completed for {comPort}. Port re-added and open requested.");
+                });
             }
             catch (OperationCanceledException)
             {
@@ -473,83 +447,16 @@ namespace DCSBIOSBridge
             }
         }
 
-        private async Task TryOpenRestoredPortWithRetriesAsync(string comPort, CancellationToken cancellationToken)
-        {
-            Logger.Info($"OpenAllPortsOnStartup is enabled. Starting delayed open retries for restored port {comPort}.");
-
-            for (var i = 0; i < RestoredPortOpenRetryDelaysMilliseconds.Length; i++)
-            {
-                var delayMs = RestoredPortOpenRetryDelaysMilliseconds[i];
-                await Task.Delay(delayMs, cancellationToken);
-
-                if (Dispatcher.Invoke(() => _serialPortUserControls.Any(o => o.Name.Equals(comPort, StringComparison.OrdinalIgnoreCase))) == false)
-                {
-                    Logger.Info($"Restored port {comPort} no longer exists in UI before open attempt {i + 1}. Stopping open retries.");
-                    return;
-                }
-
-                var openSignal = RegisterRestoredPortOpenSignal(comPort);
-
-                Logger.Info($"Opening restored port {comPort} on retry attempt {i + 1} after waiting {delayMs} ms.");
-                DBEventManager.BroadCastPortStatus(comPort, SerialPortStatus.Open);
-
-                var completedTask = await Task.WhenAny(openSignal.Task, Task.Delay(RestoredPortOpenAttemptWaitMilliseconds, cancellationToken));
-                if (completedTask == openSignal.Task && openSignal.Task.Result)
-                {
-                    Logger.Info($"Restored port {comPort} opened successfully on retry attempt {i + 1}.");
-                    return;
-                }
-
-                Logger.Warn($"Restored port {comPort} did not open successfully on retry attempt {i + 1}.");
-            }
-
-            Logger.Warn($"Restored port {comPort} failed to open after {RestoredPortOpenRetryDelaysMilliseconds.Length} retry attempts.");
-        }
-
-        private TaskCompletionSource<bool> RegisterRestoredPortOpenSignal(string comPort)
-        {
-            lock (_lockObject)
-            {
-                if (_pendingRestoredPortOpenSignals.TryGetValue(comPort, out var existingSignal))
-                {
-                    existingSignal.TrySetCanceled();
-                }
-
-                var signal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                _pendingRestoredPortOpenSignals[comPort] = signal;
-                return signal;
-            }
-        }
-
-        private void CompleteRestoredPortOpenSignal(string comPort, bool success)
+        private bool HasPendingRemovedPortRescan(string comPort)
         {
             if (string.IsNullOrWhiteSpace(comPort))
             {
-                return;
+                return false;
             }
 
             lock (_lockObject)
             {
-                if (_pendingRestoredPortOpenSignals.TryGetValue(comPort, out var signal) == false)
-                {
-                    return;
-                }
-
-                _pendingRestoredPortOpenSignals.Remove(comPort);
-                signal.TrySetResult(success);
-            }
-        }
-
-        private void CancelAllPendingRestoredPortOpenSignals()
-        {
-            lock (_lockObject)
-            {
-                foreach (var signal in _pendingRestoredPortOpenSignals.Values)
-                {
-                    signal.TrySetCanceled();
-                }
-
-                _pendingRestoredPortOpenSignals.Clear();
+                return _pendingRemovedPortRescans.ContainsKey(comPort);
             }
         }
 
