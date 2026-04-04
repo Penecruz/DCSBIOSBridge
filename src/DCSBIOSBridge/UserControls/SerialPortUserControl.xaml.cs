@@ -129,7 +129,7 @@ namespace DCSBIOSBridge.UserControls
                 {
                     case SerialPortStatus.Open:
                         {
-                            Dispatcher.Invoke(OpenPort);
+                            Dispatcher.Invoke(() => OpenPort(false));
                             break;
                         }
                     case SerialPortStatus.Close:
@@ -338,13 +338,13 @@ namespace DCSBIOSBridge.UserControls
             ButtonConnection.IsChecked = _serialPortShell.IsOpen;
         }
 
-        private void OpenPort()
+        private void OpenPort(bool showErrorPopup = true)
         {
             try
             {
                 if (!IsEnabled || _serialPortShell.IsOpen) return;
                 Dispatcher.Invoke(() => ShowInfo);
-                _serialPortShell.Open();
+                _serialPortShell.Open(showErrorPopup);
             }
             catch (Exception ex)
             {

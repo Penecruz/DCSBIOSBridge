@@ -29,7 +29,7 @@
                 <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Enable Watch Dog turns automatic serial recovery on or off globally. Disable it for troubleshooting or when you want manual-only recovery.</TextBlock>
                 <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Watch Dog no-read timeout + recent-write window detect stalled devices: if writes are still happening but reads stop, the watchdog barks and reopens the port.</TextBlock>
                 <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Cooldown and reopen delay prevent aggressive loop-restarts. Higher values are safer for unstable hardware; lower values recover faster.</TextBlock>
-                <TextBlock TextWrapping="Wrap" Margin="0,0,0,12">• For dropped ports, the bridge can re-add the COM device and retry opening it after timed delays (helpful for USB brown-outs and intermittent device resets).</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,12">• For dropped ports, the bridge can re-add the COM device and retry opening it after timed delay of 20 seconds (helpful for USB brown-outs and intermittent device resets).</TextBlock>
 
                 <Separator Margin="0,0,0,10" />
 
