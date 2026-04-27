@@ -42,6 +42,8 @@ namespace DCSBIOSBridge
         private List<SerialPortUserControl> _serialPortUserControls = new();
         private readonly Dictionary<string, CancellationTokenSource> _pendingRemovedPortRescans = new(StringComparer.OrdinalIgnoreCase);
         private const int RemovedPortRestoreDelayMilliseconds = 20000;
+        private DateTime _lastDcsConnectionLogUtc = DateTime.MinValue;
+        private static readonly TimeSpan DcsConnectionLogInterval = TimeSpan.FromSeconds(10);
 
         public MainWindow()
         {
@@ -132,6 +134,13 @@ namespace DCSBIOSBridge
         {
             try
             {
+                var utcNow = DateTime.UtcNow;
+                if (utcNow - _lastDcsConnectionLogUtc >= DcsConnectionLogInterval)
+                {
+                    _lastDcsConnectionLogUtc = utcNow;
+                    Logger.Info("DCS-BIOS connection heartbeat received.");
+                }
+
                 Dispatcher?.BeginInvoke((Action)(() => ControlSpinningWheel.RotateGear()));
             }
             catch (Exception ex)
@@ -157,9 +166,11 @@ namespace DCSBIOSBridge
                         break;
                     case SerialPortStatus.Opened:
                         {
+                            Logger.Info($"Serial port opened: {e.SerialPortName}");
                             break;
                         }
                     case SerialPortStatus.Closed:
+                        Logger.Info($"Serial port closed: {e.SerialPortName}");
                         break;
                     case SerialPortStatus.Added:
                     case SerialPortStatus.Hidden:
@@ -189,6 +200,7 @@ namespace DCSBIOSBridge
                             break;
                         }
                     case SerialPortStatus.WatchDogBark:
+                        Logger.Warn($"Serial watchdog bark received for {e.SerialPortName}");
                         break;
                     case SerialPortStatus.IOError:
                         {
@@ -718,7 +730,19 @@ namespace DCSBIOSBridge
         {
             try
             {
-                Process.Start(_profileHandler.FileName);
+                var profilePath = _profileHandler.FileName;
+                if (string.IsNullOrWhiteSpace(profilePath) || !File.Exists(profilePath))
+                {
+                    Common.ShowMessageBox("No saved profile file was found to open.");
+                    return;
+                }
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = profilePath,
+                    UseShellExecute = true,
+                    Verb = "open"
+                });
             }
             catch (Exception ex)
             {

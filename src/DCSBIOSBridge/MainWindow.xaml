@@ -62,6 +62,7 @@
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="Help" >
+                <MenuItem Header="Log File" Click="MenuItemLogFile_OnClick" />
                 <MenuItem Header="About" Name="MenuItemAbout" Click="MenuItemAbout_OnClick"  />
             </MenuItem>
         </Menu>

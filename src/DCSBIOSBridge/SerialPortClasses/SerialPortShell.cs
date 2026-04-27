@@ -58,6 +58,12 @@ namespace DCSBIOSBridge.SerialPortClasses
         private DateTime _lastWatchDogBarkUtc = DateTime.MinValue;
         private bool _readChannelObserved;
         private int _watchDogBarkCount;
+        private int _queuedMessageCount;
+        private long _queuedByteCount;
+        private DateTime _lastQueueDiagnosticsLogUtc = DateTime.MinValue;
+        private static readonly TimeSpan QueueDiagnosticsLogInterval = TimeSpan.FromSeconds(10);
+        private const int QueueMessageWarningThreshold = 100;
+        private const long QueueBytesWarningThreshold = 1 * 1024 * 1024;
 
         public SerialPortSetting SerialPortSetting { get; set; }
 
@@ -169,6 +175,7 @@ namespace DCSBIOSBridge.SerialPortClasses
 
             if (openSucceeded)
             {
+                Logger.Info($"Serial port opened {SerialPortSetting.ComPort}. BaudRate={SerialPortSetting.BaudRate}, WriteTimeout={SerialPortSetting.WriteTimeout}, ReadTimeout={SerialPortSetting.ReadTimeout}");
                 _ = Task.Run(SerialDataWrite);
                 DBEventManager.BroadCastPortStatus(SerialPortSetting.ComPort, SerialPortStatus.Opened);
             }
@@ -183,6 +190,7 @@ namespace DCSBIOSBridge.SerialPortClasses
                 if (_safeSerialPort == null) return;
 
                 _portShouldBeOpen = false;
+                _serialDataWaitingForWriteResetEvent?.Set();
 
                 Logger.Info($"Closing and disposing serial port {SerialPortSetting.ComPort}");
 
@@ -192,6 +200,8 @@ namespace DCSBIOSBridge.SerialPortClasses
                 _safeSerialPort.Close();
                 _safeSerialPort.Dispose();
                 _safeSerialPort = null;
+
+                ClearQueuedData("port-close");
 
                 DBEventManager.BroadCastPortStatus(SerialPortSetting.ComPort, SerialPortStatus.Closed);
             }
@@ -251,6 +261,9 @@ namespace DCSBIOSBridge.SerialPortClasses
             if (data == null || data.Length == 0 || _safeSerialPort == null || !_safeSerialPort.IsOpen) return;
 
             _serialDataQueue.Enqueue(data);
+            Interlocked.Increment(ref _queuedMessageCount);
+            Interlocked.Add(ref _queuedByteCount, data.Length);
+            LogQueueDiagnosticsIfNeeded("enqueue");
             _serialDataWaitingForWriteResetEvent.Set();
         }
 
@@ -263,31 +276,120 @@ namespace DCSBIOSBridge.SerialPortClasses
                     _serialDataWaitingForWriteResetEvent.WaitOne();
                     if (_shutdown || _safeSerialPort == null || !_safeSerialPort.IsOpen) break;
 
-                    var success = _serialDataQueue.TryDequeue(out var data);
-                    if(!success) continue;
-                    
-                    _safeSerialPort.BaseStream.Write(data, 0, data.Length);
-                    _lastSerialWriteActivityUtc = DateTime.UtcNow;
-                    DBEventManager.BroadCastSerialData(ComPort, data.Length, StreamInterface.SerialPortWritten);
+                    while (_serialDataQueue.TryDequeue(out var data))
+                    {
+                        if (_shutdown || _safeSerialPort == null || !_safeSerialPort.IsOpen)
+                        {
+                            break;
+                        }
+
+                        Interlocked.Decrement(ref _queuedMessageCount);
+                        Interlocked.Add(ref _queuedByteCount, -data.Length);
+                        NormalizeQueueCounters();
+
+                        _safeSerialPort.Write(data, 0, data.Length);
+                        _lastSerialWriteActivityUtc = DateTime.UtcNow;
+                        DBEventManager.BroadCastSerialData(ComPort, data.Length, StreamInterface.SerialPortWritten);
+                    }
+
+                    LogQueueDiagnosticsIfNeeded("dequeue");
+                }
+                catch (TimeoutException e)
+                {
+                    Logger.Error("SerialDataWrite failed => {0}", e);
+                    _portShouldBeOpen = false;
+                    ClearQueuedData("serial-write-timeout");
+                    DBEventManager.BroadCastPortStatus(SerialPortSetting.ComPort, SerialPortStatus.TimeOutError);
+                    break;
                 }
                 catch (OperationCanceledException e)
                 {
                     Logger.Error("SerialDataWrite failed => {0}", e);
+                    _portShouldBeOpen = false;
+                    ClearQueuedData("serial-write-cancelled");
                     DBEventManager.BroadCastPortStatus(SerialPortSetting.ComPort, SerialPortStatus.Error);
                     break;
                 }
                 catch (IOException e)
                 {
                     Logger.Error("SerialDataWrite failed => {0}", e);
+                    _portShouldBeOpen = false;
+                    ClearQueuedData("serial-write-ioerror");
                     DBEventManager.BroadCastPortStatus(SerialPortSetting.ComPort, SerialPortStatus.IOError);
                     break;
                 }
                 catch (Exception e)
                 {
                     Logger.Error("SerialDataWrite failed => {0}", e);
+                    _portShouldBeOpen = false;
+                    ClearQueuedData("serial-write-exception");
                     DBEventManager.BroadCastPortStatus(SerialPortSetting.ComPort, SerialPortStatus.Error);
                     break;
                 }
+            }
+        }
+
+        private void LogQueueDiagnosticsIfNeeded(string reason, bool force = false)
+        {
+            var queuedMessages = Volatile.Read(ref _queuedMessageCount);
+            var queuedBytes = Volatile.Read(ref _queuedByteCount);
+            var queueWarning = queuedMessages >= QueueMessageWarningThreshold || queuedBytes >= QueueBytesWarningThreshold;
+
+            if (!force && !queueWarning)
+            {
+                return;
+            }
+
+            var utcNow = DateTime.UtcNow;
+            if (!force && utcNow - _lastQueueDiagnosticsLogUtc < QueueDiagnosticsLogInterval)
+            {
+                return;
+            }
+
+            _lastQueueDiagnosticsLogUtc = utcNow;
+
+            if (queueWarning)
+            {
+                Logger.Warn($"Serial queue pressure on {SerialPortSetting.ComPort}. Reason={reason}, QueuedMessages={queuedMessages}, QueuedBytes={queuedBytes}");
+                return;
+            }
+
+            Logger.Info($"Serial queue diagnostic on {SerialPortSetting.ComPort}. Reason={reason}, QueuedMessages={queuedMessages}, QueuedBytes={queuedBytes}");
+        }
+
+        private int ClearQueuedData(string reason)
+        {
+            var clearedMessages = 0;
+            long clearedBytes = 0;
+
+            while (_serialDataQueue.TryDequeue(out var queuedData))
+            {
+                clearedMessages++;
+                clearedBytes += queuedData?.Length ?? 0;
+            }
+
+            Interlocked.Add(ref _queuedMessageCount, -clearedMessages);
+            Interlocked.Add(ref _queuedByteCount, -clearedBytes);
+            NormalizeQueueCounters();
+
+            if (clearedMessages > 0 || clearedBytes > 0)
+            {
+                Logger.Info($"Cleared queued serial data on {SerialPortSetting.ComPort}. Reason={reason}, ClearedMessages={clearedMessages}, ClearedBytes={clearedBytes}");
+            }
+
+            return clearedMessages;
+        }
+
+        private void NormalizeQueueCounters()
+        {
+            if (Volatile.Read(ref _queuedMessageCount) < 0)
+            {
+                Interlocked.Exchange(ref _queuedMessageCount, 0);
+            }
+
+            if (Volatile.Read(ref _queuedByteCount) < 0)
+            {
+                Interlocked.Exchange(ref _queuedByteCount, 0);
             }
         }
 

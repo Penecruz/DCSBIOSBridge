@@ -33,12 +33,12 @@
 
                 <Separator Margin="0,0,0,10" />
 
-                <TextBlock FontWeight="Bold" FontSize="16" Margin="0,0,0,8">Latest Changelog (v1.2.2)</TextBlock>
-                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Version 1.2.2 released.</TextBlock>
-                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Added global Enable Watch Dog setting to quickly toggle watchdog recovery behavior.</TextBlock>
-                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Improved dropped-port recovery by scheduling COM re-add scans when serial errors are detected.</TextBlock>
-                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Added restored-port open retry flow with delayed attempts for better brown-out recovery.</TextBlock>
-                <TextBlock TextWrapping="Wrap" Margin="0,0,0,12">• Expanded watchdog and recovery logging to make intermittent COM issues easier to diagnose.</TextBlock>
+                <TextBlock FontWeight="Bold" FontSize="16" Margin="0,0,0,8">Latest Changelog (v1.2.3)</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Version 1.2.3 released.</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Refined watchdog behavior with safer cooldown and reopen timing controls.</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Improved dropped-port recovery and delayed reopen flow for better USB reconnect resilience.</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Added clearer settings guidance for watchdog and serial recovery behavior.</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,12">• Expanded diagnostics logging to make intermittent COM and parsing issues easier to troubleshoot.</TextBlock>
 
                 <Separator Margin="0,0,0,10" />
 
