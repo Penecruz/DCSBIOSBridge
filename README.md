@@ -6,12 +6,20 @@ I have forked this repository for my own cockpit building purposes, mainly to up
 
 This Version incudes custom names for Comm ports to refect the attached DCS-BIOS Device, the option to open all comm ports on DCS-BIOS Bridge startup, a Watch Dog and display counter that monitors the number of times it barks to wake a non responsive device after a read or write from the connected device below a configurable threshold value, This will help stop a device becoming unresponsive in game (it will probably NOT solve comm ports dropping out due to hardware configuration issues but will attempt to reconnect them if possible).
 
-V 1.2.2 
-- Retain Custom names on COM Port disconnection and reconnect.
-- If a Com port recconcts and Open all ports on startup is checked, port will open on reconnect.
-- Added windows themee options Follow Windows, Light and Dark modes.
-- Added Watch Dog Master
-- Added COM POrt dropped will triger and auto timed task to add it again and open if COM Port is present again.
+V 1.2.4 
+- 	Improved command send throughput in DCS-BIOS path:
+-	queue wake signaling for faster dequeue responsiveness
+-	reduced send-path allocations (Encoding.ASCII.GetBytes)
+-	smarter idle delay behavior to reduce burst backlog impact
+-	Improved serial input parsing performance:
+-	replaced regex-based line splitting with lower-overhead newline scanning in SerialReceiver
+-	Reduced UI-thread contention under high traffic:
+-	switched command notification UI dispatch to non-blocking Dispatcher.BeginInvoke
+-	Watchdog behavior updates:
+-	default WatchDogNoReadTimeoutSeconds increased to 300
+-	default WatchDogRecentWriteWindowSeconds set to 0 (disabled)
+-	added short watchdog grace period after port open/reopen to reduce false bark loops
+
 
 Many thanks to the guys at DCS-Skunkworks who kept DCS-BIOS alive!
  
