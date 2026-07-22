@@ -56,6 +56,7 @@ namespace DCSBIOSBridge.SerialPortClasses
         private DateTime _lastSerialReadActivityUtc = DateTime.MinValue;
         private DateTime _lastSerialWriteActivityUtc = DateTime.MinValue;
         private DateTime _lastWatchDogBarkUtc = DateTime.MinValue;
+        private DateTime _watchDogGraceUntilUtc = DateTime.MinValue;
         private bool _readChannelObserved;
         private int _watchDogBarkCount;
         private int _queuedMessageCount;
@@ -64,6 +65,7 @@ namespace DCSBIOSBridge.SerialPortClasses
         private static readonly TimeSpan QueueDiagnosticsLogInterval = TimeSpan.FromSeconds(10);
         private const int QueueMessageWarningThreshold = 100;
         private const long QueueBytesWarningThreshold = 1 * 1024 * 1024;
+        private static readonly TimeSpan WatchDogOpenGracePeriod = TimeSpan.FromSeconds(10);
 
         public SerialPortSetting SerialPortSetting { get; set; }
 
@@ -175,6 +177,7 @@ namespace DCSBIOSBridge.SerialPortClasses
 
             if (openSucceeded)
             {
+                _watchDogGraceUntilUtc = DateTime.UtcNow + WatchDogOpenGracePeriod;
                 Logger.Info($"Serial port opened {SerialPortSetting.ComPort}. BaudRate={SerialPortSetting.BaudRate}, WriteTimeout={SerialPortSetting.WriteTimeout}, ReadTimeout={SerialPortSetting.ReadTimeout}");
                 _ = Task.Run(SerialDataWrite);
                 DBEventManager.BroadCastPortStatus(SerialPortSetting.ComPort, SerialPortStatus.Opened);
@@ -200,6 +203,7 @@ namespace DCSBIOSBridge.SerialPortClasses
                 _safeSerialPort.Close();
                 _safeSerialPort.Dispose();
                 _safeSerialPort = null;
+                _watchDogGraceUntilUtc = DateTime.MinValue;
 
                 ClearQueuedData("port-close");
 
@@ -634,6 +638,11 @@ namespace DCSBIOSBridge.SerialPortClasses
             }
 
             if (utcNow - _lastWatchDogBarkUtc < watchDogCooldown)
+            {
+                return false;
+            }
+
+            if (_watchDogGraceUntilUtc != DateTime.MinValue && utcNow < _watchDogGraceUntilUtc)
             {
                 return false;
             }

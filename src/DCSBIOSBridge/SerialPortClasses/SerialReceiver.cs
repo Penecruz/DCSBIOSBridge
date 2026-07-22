@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using System.IO.Ports;
 using System.Text;
-using System.Text.RegularExpressions;
 using DCS_BIOS;
 using DCSBIOSBridge.Events;
 using DCSBIOSBridge.Events.Args;
@@ -46,21 +45,43 @@ internal class SerialReceiver : ISerialReceiver, IDisposable
 
                         _incomingData.Append(Common.UsedEncoding.GetString(byteArray, 0, bytesRead));
 
-                        // FLAPS_SWITCH INC\nFLAPS_SWITCH DEC\nGEAR_LE
-                        var array = Regex.Split(_incomingData.ToString(), @"(?<=[\n])");
-                        foreach (var command in array)
+                        var incomingText = _incomingData.ToString();
+                        var lastNewLineIndex = incomingText.LastIndexOf('\n');
+                        if (lastNewLineIndex >= 0)
                         {
-                            if (command.Trim().Length == 0 || !command.EndsWith('\n')) continue;
+                            var commandStartIndex = 0;
+                            for (var i = 0; i <= lastNewLineIndex; i++)
+                            {
+                                if (incomingText[i] != '\n')
+                                {
+                                    continue;
+                                }
 
-                            DCSBIOS.Send(SerialPort.PortName, command);
-                            DBEventManager.BroadCastSerialData(SerialPort.PortName, command.Length, StreamInterface.SerialPortRead);
-                        }
-                        // When all commands have been processed they can be removed from the buffer
-                        foreach (var command in array)
-                        {
-                            if (command.Trim().Length == 0 || !command.EndsWith('\n')) continue;
+                                var commandLength = i - commandStartIndex;
+                                if (commandLength > 0)
+                                {
+                                    var command = incomingText.Substring(commandStartIndex, commandLength);
+                                    if (command.EndsWith('\r'))
+                                    {
+                                        command = command[..^1];
+                                    }
 
-                            _incomingData.Replace(command, string.Empty);
+                                    if (command.Length > 0)
+                                    {
+                                        var commandWithNewLine = command + '\n';
+                                        DCSBIOS.Send(SerialPort.PortName, commandWithNewLine);
+                                        DBEventManager.BroadCastSerialData(SerialPort.PortName, commandWithNewLine.Length, StreamInterface.SerialPortRead);
+                                    }
+                                }
+
+                                commandStartIndex = i + 1;
+                            }
+
+                            _incomingData.Clear();
+                            if (commandStartIndex < incomingText.Length)
+                            {
+                                _incomingData.Append(incomingText, commandStartIndex, incomingText.Length - commandStartIndex);
+                            }
                         }
                     }
                     catch (TimeoutException t)

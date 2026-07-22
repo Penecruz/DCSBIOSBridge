@@ -33,12 +33,13 @@
 
                 <Separator Margin="0,0,0,10" />
 
-                <TextBlock FontWeight="Bold" FontSize="16" Margin="0,0,0,8">Latest Changelog (v1.2.3)</TextBlock>
-                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Version 1.2.3 released.</TextBlock>
-                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Refined watchdog behavior with safer cooldown and reopen timing controls.</TextBlock>
-                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Improved dropped-port recovery and delayed reopen flow for better USB reconnect resilience.</TextBlock>
-                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Added clearer settings guidance for watchdog and serial recovery behavior.</TextBlock>
-                <TextBlock TextWrapping="Wrap" Margin="0,0,0,12">• Expanded diagnostics logging to make intermittent COM and parsing issues easier to troubleshoot.</TextBlock>
+                <TextBlock FontWeight="Bold" FontSize="16" Margin="0,0,0,8">Latest Changelog (v1.2.4)</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Version 1.2.4 released.</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Improved DCS-BIOS command send responsiveness with queue wake signaling and reduced send-path allocations.</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Reworked serial input command parsing to a lower-overhead newline scanner for better burst handling.</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Switched command notification UI updates to non-blocking dispatch for smoother behavior during high traffic.</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">• Updated Watch Dog defaults to 300s no-read timeout and 0s recent-write window (disabled) for more stable long sessions.</TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,12">• Added a short Watch Dog grace period after port open/reopen to reduce false-positive recovery cycles.</TextBlock>
 
                 <Separator Margin="0,0,0,10" />
 

@@ -193,7 +193,7 @@ namespace DCSBIOSBridge.Properties {
 
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("30")]
+        [global::System.Configuration.DefaultSettingValueAttribute("300")]
         public int WatchDogNoReadTimeoutSeconds {
             get {
                 return ((int)(this["WatchDogNoReadTimeoutSeconds"]));
@@ -205,7 +205,7 @@ namespace DCSBIOSBridge.Properties {
 
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
         public int WatchDogRecentWriteWindowSeconds {
             get {
                 return ((int)(this["WatchDogRecentWriteWindowSeconds"]));

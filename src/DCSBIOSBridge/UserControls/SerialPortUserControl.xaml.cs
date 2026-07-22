@@ -562,7 +562,7 @@ namespace DCSBIOSBridge.UserControls
         {
             try
             {
-                Dispatcher.Invoke(() =>
+                Dispatcher.BeginInvoke(() =>
                 {
                     if (e.Sender == Name)
                     {
